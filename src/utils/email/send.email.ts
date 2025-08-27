@@ -1,46 +1,21 @@
-import nodemailer, { Transporter, SendMailOptions } from "nodemailer";
+import { Transporter, createTransport } from "nodemailer";
+import Mail from "nodemailer/lib/mailer";
+import { BadRequestException } from "../response/error.response";
 
-interface EmailOptions {
-  from?: string;
-  to: string;
-  cc?: string;
-  bcc?: string;
-  subject?: string;
-  text?: string;
-  html?: string;
-  attachments?: SendMailOptions["attachments"];
-}
-
-export async function sendEmail({
-  from = process.env.EMAIL as string,
-  to,
-  cc,
-  bcc,
-  subject = "Social_App",
-  text,
-  html,
-  attachments,
-}: EmailOptions): Promise<void> {
-  const transporter: Transporter = nodemailer.createTransport({
+export const sendEmail = async (data: Mail.Options): Promise<void> => {
+  if (!data.html && !data.attachments?.length && !data.text ) {
+    throw new BadRequestException("Missing Email Content")
+  }
+  const transporter: Transporter = createTransport({
     service: "gmail",
     auth: {
-      user: process.env.EMAIL,
-      pass: process.env.EMAIL_PASSWORD,
+      user: process.env.EMAIL as string,
+      pass: process.env.EMAIL_PASSWORD as string,
     },
-    tls: {
-    rejectUnauthorized: false,
-  },
   });
 
-   await transporter.sendMail({
-    from: `"Route ❤️✅" <${from}>`,
-    to,
-    cc,
-    bcc,
-    subject,
-    text,
-    html,
-    attachments,
+  await transporter.sendMail({
+    ...data,
+    from: `"Route ❤️✅" <${process.env.EMAIL as string}>`,
   });
-
-}
+};

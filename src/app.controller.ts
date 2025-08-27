@@ -13,7 +13,7 @@ import connectDB from "./DB/connection.db";
 
 
 
-const bootstrap = (): void => {
+const bootstrap = async (): Promise<void> => {
   const app: Express = express();
   const port: number | string = process.env.PORT || 5000;
 
@@ -29,7 +29,7 @@ const bootstrap = (): void => {
   app.use(cors());
   app.use(helmet());
 
-  connectDB()
+  await connectDB()
 
   app.use("/auth", authController);
 

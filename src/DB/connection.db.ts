@@ -1,12 +1,14 @@
-import mongoose from "mongoose";
+import { connect } from "mongoose";
+import { UserModel } from "./models/User.model";
 
- const connectDB = async () => {
+const connectDB = async (): Promise<void> => {
   try {
-    await mongoose.connect(process.env.DB_URI as string);
+    const result = await connect(process.env.DB_URI as string);
+    await UserModel.syncIndexes()
+    console.log(result.models);
     console.log("DB connected ✅");
   } catch (err) {
     console.error("Fail to connect on DB ❌", err);
-    process.exit(1);
   }
 };
 

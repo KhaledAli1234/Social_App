@@ -1,11 +1,23 @@
 import type { Request, Response } from "express";
-import type { ILoginBodyInputsDTO, ISignupBodyInputsDTO } from "./auth.dto";
+import type {
+  IConfirmEmailBodyInputsDTO,
+  ILoginBodyInputsDTO,
+  ISignupBodyInputsDTO,
+} from "./auth.dto";
 import { UserModel } from "../../DB/models/User.model";
-import { sendEmail } from "../../utils/email/send.email";
-import { BadRequestException } from "../../utils/response/error.response";
-import { customAlphabet } from "nanoid";
+import { UserRepository } from "../../DB/repository/user.repository";
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from "../../utils/response/error.response";
+import { compareHash, generatHash } from "../../utils/secuirty/hash.secuirty";
+import { emailEvent } from "../../utils/events/email.event";
+import { generateNumberOtp } from "../../utils/otp";
+// import { customAlphabet } from "nanoid";
 
 class AuthenticationService {
+  private userModel = new UserRepository(UserModel);
   constructor() {}
 
   /**
@@ -18,67 +30,90 @@ class AuthenticationService {
    */
 
   signup = async (req: Request, res: Response): Promise<Response> => {
-    let { userName, email, password }: ISignupBodyInputsDTO = req.body;
-    const exist = await UserModel.findOne({ email });
-    if (exist) {
-      throw new BadRequestException("User already exists");
+    let { username, email, password }: ISignupBodyInputsDTO = req.body;
+
+    const checkUserExist = await this.userModel.findOne({
+      filter: { email },
+      select: "email",
+      options: {
+        lean: true,
+      },
+    });
+    if (checkUserExist) {
+      throw new ConflictException("Email exist");
     }
+    const otp = generateNumberOtp();
+    // const otp = customAlphabet("0123456789" , 6)();
 
-   const verificationCode = customAlphabet("0123456789", 6)();
-
-
-    const user = new UserModel({
-      userName,
-      email,
-      password,
-      verificationCode,
+    const user = await this.userModel.createUser({
+      data: [
+        {
+          username,
+          email,
+          password: await generatHash(password),
+          confirmEmailOtp: await generatHash(String(otp)),
+        },
+      ],
     });
 
-    await user.save();
+    user.save();
 
-    await sendEmail({
-      to: email,
-      subject: "Confirm your account",
-      html: `<p>Your code: <b>${verificationCode}</b></p>`,
-    });
+    emailEvent.emit("confirmEmail", { to: email, otp });
 
     return res
-      .status(200)
-      .json({ message: "User created successfully", data: req.body });
+      .status(201)
+      .json({ message: "User created successfully", data: { user } });
   };
 
   login = async (req: Request, res: Response): Promise<Response> => {
     const { email, password }: ILoginBodyInputsDTO = req.body;
 
-    const user = await UserModel.findOne({ email, password });
-    if (!user) {
-      throw new BadRequestException("Invalid credentials");
-    }
+     const user = await this.userModel.findOne({
+    filter: { email },
+  });
 
-    if (!user.isVerified) {
-      throw new BadRequestException("Please verify your email first");
-    }
+  if (!user) {
+    throw new NotFoundException("Account not found");
+  }
+
+  if (!user.confirmAt) {
+    throw new BadRequestException("Please verify your email first");
+  }
+
+  const isMatch = await compareHash(password, user.password);
+  if (!isMatch) {
+    throw new BadRequestException("Invalid credentials");
+  }
 
     return res
       .status(200)
-      .json({ message: "Login successful", data: req.body });
+      .json({ message: "Login successful" });
   };
 
   confirmEmail = async (req: Request, res: Response): Promise<Response> => {
-    const { email, code } = req.body;
+    const { email, otp }: IConfirmEmailBodyInputsDTO = req.body;
 
-    const user = await UserModel.findOne({ email });
+    const user = await this.userModel.findOne({
+      filter: {
+        email,
+        confirmEmailOtp: { $exists: true },
+        confirmAt: { $exists: false },
+      },
+    });
     if (!user) {
-      throw new BadRequestException("User not found");
+      throw new NotFoundException("Invalid account");
     }
 
-    if (user.verificationCode !== code) {
-      throw new BadRequestException("Invalid verification code");
+    if (!(await compareHash(otp, user.confirmEmailOtp as string))) {
+      throw new ConflictException("Invalid confirmation code");
     }
-
-    user.isVerified = true;
-    user.verificationCode = "";
-    await user.save();
+    await this.userModel.updateOne({
+      filter: { email },
+      update: {
+        confirmAt: new Date(),
+        $unset: { confirmEmailOtp: 1 },
+      },
+    });
 
     return res.status(200).json({ message: "Email verified successfully" });
   };

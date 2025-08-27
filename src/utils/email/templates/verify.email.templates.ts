@@ -1,12 +1,10 @@
-interface VerifyEmailTemplateProps {
-  otp: string;
-  title?: string;
-}
-
-export const verifyEmailTemplate = ({
+export const verifyEmail = ({
   otp,
-  title = "Email Confirmation",
-}: VerifyEmailTemplateProps): string => {
+  title,
+}: {
+  otp: number;
+  title: string;
+}): string => {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -53,7 +51,7 @@ body{background-color: #88BDBF;margin: 0px;}
 </tr>
 <tr>
 <td>
-<h2 style="margin:10px 0px 30px 0px;border-radius:4px;padding:10px 20px;border: 0;color:#fff;background-color:#630E2B; ">${otp}</h2>
+<p style="margin:10px 0px 30px 0px;border-radius:4px;padding:10px 20px;border: 0;color:#fff;background-color:#630E2B; ">${otp}</p>
 </td>
 </tr>
 </table>

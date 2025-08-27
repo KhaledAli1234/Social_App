@@ -9,3 +9,4 @@ import { z } from "zod";
 
 export type ISignupBodyInputsDTO = z.Infer<typeof validators.signup.body>;
 export type ILoginBodyInputsDTO = z.Infer<typeof validators.login.body>;
+export type IConfirmEmailBodyInputsDTO = z.Infer<typeof validators.confirmEmail.body>;

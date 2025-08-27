@@ -13,7 +13,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = require("express-rate-limit");
 const error_response_1 = require("./utils/response/error.response");
 const connection_db_1 = __importDefault(require("./DB/connection.db"));
-const bootstrap = () => {
+const bootstrap = async () => {
     const app = (0, express_1.default)();
     const port = process.env.PORT || 5000;
     const limiter = (0, express_rate_limit_1.rateLimit)({
@@ -26,7 +26,7 @@ const bootstrap = () => {
     app.use(express_1.default.json());
     app.use((0, cors_1.default)());
     app.use((0, helmet_1.default)());
-    (0, connection_db_1.default)();
+    await (0, connection_db_1.default)();
     app.use("/auth", auth_controller_1.default);
     app.get("/", (req, res) => {
         res.json({ message: "Welcome to social app backend landing page ❤️🍀" });

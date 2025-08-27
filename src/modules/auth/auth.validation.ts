@@ -9,10 +9,18 @@ export const login = {
     })
 };
 
+export const confirmEmail = {
+  body: z
+    .strictObject({
+      email: generalFields.email,
+      otp:generalFields.otp, 
+    })
+};
+
 
 export const signup = {
   body: login.body.extend({
-      userName: generalFields.userName,
+      username: generalFields.username,
       confirmPassword: generalFields.confirmPassword,
     })
     .superRefine((data, ctx) => {

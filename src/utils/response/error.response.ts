@@ -28,6 +28,12 @@ export class NotFoundException extends ApplicationException {
   }
 }
 
+export class ConflictException extends ApplicationException {
+  constructor(message: string, cause?: unknown) {
+    super(message, 409, cause);
+  }
+}
+
 export const globalErrorHandling = (
   error: IError,
   req: Request,

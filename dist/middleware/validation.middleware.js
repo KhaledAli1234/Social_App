@@ -1,7 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generalFields = exports.validation = void 0;
-const zod_1 = require("zod");
+const zod_1 = __importDefault(require("zod"));
 const error_response_1 = require("../utils/response/error.response");
 const validation = (schema) => {
     return (req, res, next) => {
@@ -31,10 +34,11 @@ const validation = (schema) => {
 };
 exports.validation = validation;
 exports.generalFields = {
-    userName: zod_1.z.string().min(2).max(20),
-    email: zod_1.z.email(),
-    password: zod_1.z
+    username: zod_1.default.string().min(2).max(20),
+    email: zod_1.default.email(),
+    password: zod_1.default
         .string()
         .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/),
-    confirmPassword: zod_1.z.string(),
+    confirmPassword: zod_1.default.string(),
+    otp: zod_1.default.string().regex(/^\d{6}$/),
 };

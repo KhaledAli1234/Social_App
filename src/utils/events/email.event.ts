@@ -1,24 +1,24 @@
 import { EventEmitter } from "node:events";
 import { sendEmail } from "../email/send.email";
-import { verifyEmailTemplate } from "../email/templates/verify.email.templates"; 
-
-interface ConfirmEmailEvent {
-  to: string;
-  subject?: string;
-  otp: string;
-}
+import Mail from "nodemailer/lib/mailer";
+import { verifyEmail } from "../email/templates/verify.email.templates";
 
 export const emailEvent = new EventEmitter();
 
-emailEvent.on("confirmEmail", async (data: ConfirmEmailEvent) => {
+interface IEmail extends Mail.Options {
+  otp: number;
+}
+
+emailEvent.on("confirmEmail", async (data: IEmail) => {
   try {
-    await sendEmail({
-      to: data.to,
-      subject: data.subject || "confirm-Email",
-      html: verifyEmailTemplate({ otp: data.otp }),
+    data.subject = "Confirm-Email";
+    data.html = verifyEmail({
+      otp: data.otp,
+      title: "Email-Confirmation",
     });
-    console.log(`Email sent to ${data.to} ✅`);
+
+    await sendEmail(data);
   } catch (error) {
-    console.error(`fail to send email to ${data.to}`);
+    console.error(`fail to send email`);
   }
 });

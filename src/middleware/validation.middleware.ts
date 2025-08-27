@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { z, type ZodError, type ZodType } from "zod";
+import z, { type ZodError, type ZodType } from "zod";
 import { BadRequestException } from "../utils/response/error.response";
 
 type KeyReqType = keyof Request;
@@ -50,11 +50,12 @@ export const validation = (schema: SchemaType) => {
   };
 };
 
-export const generalFields ={
-    userName: z.string().min(2).max(20),
-        email: z.email(),
-        password: z
-          .string()
-          .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/),
-        confirmPassword: z.string(),
-}
+export const generalFields = {
+  username: z.string().min(2).max(20),
+  email: z.email(),
+  password: z
+    .string()
+    .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/),
+  confirmPassword: z.string(),
+  otp: z.string().regex(/^\d{6}$/),
+};

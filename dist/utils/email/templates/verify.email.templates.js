@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyEmailTemplate = void 0;
-const verifyEmailTemplate = ({ otp, title = "Email Confirmation", }) => {
+exports.verifyEmail = void 0;
+const verifyEmail = ({ otp, title, }) => {
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -48,7 +48,7 @@ body{background-color: #88BDBF;margin: 0px;}
 </tr>
 <tr>
 <td>
-<h2 style="margin:10px 0px 30px 0px;border-radius:4px;padding:10px 20px;border: 0;color:#fff;background-color:#630E2B; ">${otp}</h2>
+<p style="margin:10px 0px 30px 0px;border-radius:4px;padding:10px 20px;border: 0;color:#fff;background-color:#630E2B; ">${otp}</p>
 </td>
 </tr>
 </table>
@@ -87,4 +87,4 @@ body{background-color: #88BDBF;margin: 0px;}
 </body>
 </html>`;
 };
-exports.verifyEmailTemplate = verifyEmailTemplate;
+exports.verifyEmail = verifyEmail;
