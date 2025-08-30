@@ -4,6 +4,7 @@ config({ path: resolve("./config/.env.development") });
 import type { Request, Response, Express } from "express";
 import express from "express";
 import authController from "./modules/auth/auth.controller";
+import userController from "./modules/user/user.controller";
 
 import cors from "cors";
 import helmet from "helmet";
@@ -32,6 +33,7 @@ const bootstrap = async (): Promise<void> => {
   await connectDB()
 
   app.use("/auth", authController);
+  app.use("/user", userController);
 
   app.get("/", (req: Request, res: Response) => {
     res.json({ message: "Welcome to social app backend landing page ❤️🍀" });

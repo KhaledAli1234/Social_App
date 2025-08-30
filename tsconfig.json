@@ -11,6 +11,9 @@
     "module": "commonjs",
     "target": "es2023",
     "types": ["node"],
+    "paths": {
+      "*": ["./src/utils/types/*"]
+    },
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],

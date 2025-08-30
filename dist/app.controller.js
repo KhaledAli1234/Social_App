@@ -8,6 +8,7 @@ const dotenv_1 = require("dotenv");
 (0, dotenv_1.config)({ path: (0, node_path_1.resolve)("./config/.env.development") });
 const express_1 = __importDefault(require("express"));
 const auth_controller_1 = __importDefault(require("./modules/auth/auth.controller"));
+const user_controller_1 = __importDefault(require("./modules/user/user.controller"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = require("express-rate-limit");
@@ -28,6 +29,7 @@ const bootstrap = async () => {
     app.use((0, helmet_1.default)());
     await (0, connection_db_1.default)();
     app.use("/auth", auth_controller_1.default);
+    app.use("/user", user_controller_1.default);
     app.get("/", (req, res) => {
         res.json({ message: "Welcome to social app backend landing page ❤️🍀" });
     });
