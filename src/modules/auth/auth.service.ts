@@ -1,10 +1,14 @@
 import type { Request, Response } from "express";
 import type {
   IConfirmEmailBodyInputsDTO,
+  IForgotPasswordBodyInputsDTO,
+  IGmailDTO,
   ILoginBodyInputsDTO,
+  IResetForgotPasswordBodyInputsDTO,
   ISignupBodyInputsDTO,
+  IVerifyForgotPasswordBodyInputsDTO,
 } from "./auth.dto";
-import { UserModel } from "../../DB/models/User.model";
+import { ProviderEnum, UserModel } from "../../DB/models/User.model";
 import { UserRepository } from "../../DB/repository/user.repository";
 import {
   BadRequestException,
@@ -15,6 +19,7 @@ import { compareHash, generatHash } from "../../utils/secuirty/hash.secuirty";
 import { emailEvent } from "../../utils/events/email.event";
 import { generateNumberOtp } from "../../utils/otp";
 import { createLoginCredentials } from "../../utils/secuirty/token.secuirty";
+import { OAuth2Client, type TokenPayload } from "google-auth-library";
 // import { customAlphabet } from "nanoid";
 
 class AuthenticationService {
@@ -30,18 +35,20 @@ class AuthenticationService {
    * return {message:"Done" , statusCode:201}
    */
 
-  // private verifyGoogleAccount = async ({
-  //   idToken,
-  // }: {
-  //   idToken: string;
-  // }): Promise<any> => {
-  //   const client = new OAuth2Client();
-  //   const ticket = await client.verifyIdToken({
-  //     idToken,
-  //     audience: process.env.WEB_CLIENT_ID!.split(","),
-  //   });
-  //   return ticket.getPayload();
-  // };
+  private verifyGoogleAccount = async (
+    idToken: string
+  ): Promise<TokenPayload> => {
+    const client = new OAuth2Client();
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.WEB_CLIENT_ID?.split(",") || [],
+    });
+    const payload = ticket.getPayload();
+    if (!payload?.email_verified) {
+      throw new BadRequestException("fail to verify this google account");
+    }
+    return payload;
+  };
 
   signup = async (req: Request, res: Response): Promise<Response> => {
     let { username, email, password }: ISignupBodyInputsDTO = req.body;
@@ -83,7 +90,10 @@ class AuthenticationService {
     const { email, password }: ILoginBodyInputsDTO = req.body;
 
     const user = await this.userModel.findOne({
-      filter: { email },
+      filter: {
+        email,
+        provider: ProviderEnum.system,
+      },
     });
 
     if (!user) {
@@ -134,183 +144,174 @@ class AuthenticationService {
     return res.status(200).json({ message: "Email verified successfully" });
   };
 
-  // sendForgotPassword = async (
-  //   req: Request,
-  //   res: Response
-  // ): Promise<Response> => {
-  //   const { email } = req.body;
-  //   const otp = customAlphabet("0123456789", 6)();
+  sendForgotPassword = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const { email }: IForgotPasswordBodyInputsDTO = req.body;
+    const otp = generateNumberOtp();
 
-  //   const hashedOtp = await generateHash({ plainText: otp });
+    const user = await this.userModel.findOne({
+      filter: {
+        email,
+        confirmAt: { $exists: true },
+        provider: ProviderEnum.system,
+      },
+    });
 
-  //   const user = await DBservice.findOneAndUpdate({
-  //     model: this.userModel,
-  //     filter: {
-  //       email,
-  //       confirmEmail: { $exists: true },
-  //       deleteAt: { $exists: false },
-  //       provider: providerEnum.system,
-  //     },
-  //     data: {
-  //       ForgotPasswordOtp: hashedOtp,
-  //     },
-  //     options: { new: true },
-  //   });
+    if (!user) {
+      throw new NotFoundException("Invalid account");
+    }
 
-  //   if (!user) {
-  //     throw new NotFoundException("Invalid account");
-  //   }
+    const result = await this.userModel.updateOne({
+      filter: {
+        email,
+      },
+      update: {
+        resetPasswordOtp: await generatHash(String(otp)),
+      },
+    });
+    if (!result.matchedCount) {
+      throw new BadRequestException("Fail to send reset code");
+    }
 
-  //   emailEvent.emit("sendForgotPassword", {
-  //     to: email,
-  //     subject: "Forgot Password",
-  //     title: "Reset Password",
-  //     otp,
-  //   });
+    emailEvent.emit("resetPassword", {
+      to: email,
+      otp,
+    });
 
-  //   return res.status(200).json({ message: "OTP sent successfully" });
-  // };
+    return res.status(200).json({ message: "OTP sent successfully" });
+  };
 
-  // verifyForgotPassword = async (
-  //   req: Request,
-  //   res: Response
-  // ): Promise<Response> => {
-  //   const { email, otp } = req.body;
+  verifyForgotPassword = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const { email, otp }: IVerifyForgotPasswordBodyInputsDTO = req.body;
 
-  //   const user = await DBservice.findOne({
-  //     model: this.userModel,
-  //     filter: {
-  //       email,
-  //       confirmEmail: { $exists: true },
-  //       deleteAt: { $exists: false },
-  //       ForgotPasswordOtp: { $exists: true },
-  //       provider: providerEnum.system,
-  //     },
-  //   });
+    const user = await this.userModel.findOne({
+      filter: {
+        email,
+        resetPasswordOtp: { $exists: true },
+        provider: ProviderEnum.system,
+      },
+    });
 
-  //   if (!user) {
-  //     throw new NotFoundException("Invalid account");
-  //   }
+    if (!user) {
+      throw new NotFoundException("Invalid account");
+    }
 
-  //   if (
-  //     !(await compareHash({
-  //       plainText: otp,
-  //       hashValue: user.ForgotPasswordOtp,
-  //     }))
-  //   ) {
-  //     throw new BadRequestException("Invalid OTP");
-  //   }
+    if (!(await compareHash(otp, user.resetPasswordOtp as string))) {
+      throw new ConflictException("Invalid OTP");
+    }
 
-  //   return res.status(200).json({ message: "OTP verified successfully" });
-  // };
+    return res.status(200).json({ message: "OTP verified successfully" });
+  };
 
-  // resetPassword = async (req: Request, res: Response): Promise<Response> => {
-  //   const { email, otp, password } = req.body;
+  resetForgotPassword = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const { email, otp, password }: IResetForgotPasswordBodyInputsDTO =
+      req.body;
 
-  //   const user = await DBservice.findOne({
-  //     model: this.userModel,
-  //     filter: {
-  //       email,
-  //       confirmEmail: { $exists: true },
-  //       deleteAt: { $exists: false },
-  //       ForgotPasswordOtp: { $exists: true },
-  //       provider: providerEnum.system,
-  //     },
-  //   });
+    const user = await this.userModel.findOne({
+      filter: {
+        email,
+        resetPasswordOtp: { $exists: true },
+        provider: ProviderEnum.system,
+      },
+    });
 
-  //   if (!user) {
-  //     throw new NotFoundException("Invalid account");
-  //   }
+    if (!user) {
+      throw new NotFoundException("Invalid account");
+    }
 
-  //   if (
-  //     !(await compareHash({
-  //       plainText: otp,
-  //       hashValue: user.ForgotPasswordOtp,
-  //     }))
-  //   ) {
-  //     throw new BadRequestException("Invalid OTP");
-  //   }
+    if (!(await compareHash(otp, user.resetPasswordOtp as string))) {
+      throw new ConflictException("Invalid OTP");
+    }
 
-  //   await DBservice.updateOne({
-  //     model: this.userModel,
-  //     filter: { email },
-  //     data: {
-  //       password: await generateHash({ plainText: password }),
-  //       changeCredentialsTime: new Date(),
-  //     },
-  //   });
+    const result = await this.userModel.updateOne({
+      filter: { email },
+      update: {
+        $unset: { resetPasswordOtp: 1 },
+        password: await generatHash(password),
+        changeCredentialsTime: new Date(),
+      },
+    });
+    if (!result.matchedCount) {
+      throw new BadRequestException("Fail to  reset account password");
+    }
 
-  //   return res.status(200).json({ message: "Password reset successfully" });
-  // };
+    return res.status(200).json({ message: "Password reset successfully" });
+  };
 
-  // signupWithGmail = async (req: Request, res: Response): Promise<Response> => {
-  //   const { idToken } = req.body;
-  //   const { email, email_verified, picture, name } =
-  //     await this.verifyGoogleAccount({ idToken });
+  signupWithGmail = async (req: Request, res: Response): Promise<Response> => {
+    const { idToken }: IGmailDTO = req.body;
+    const { email, family_name, given_name, picture } =
+      await this.verifyGoogleAccount(idToken);
 
-  //   if (!email_verified) {
-  //     throw new BadRequestException("Not verified account");
-  //   }
+    const user = await this.userModel.findOne({
+      filter: {
+        email,
+      },
+    });
 
-  //   const user = await DBservice.findOne({
-  //     model: this.userModel,
-  //     filter: { email },
-  //   });
+    if (user) {
+      if (user.provider === ProviderEnum.google) {
+        return this.loginWithGmail(req, res);
+      }
+      throw new ConflictException("Email already exists");
+    }
 
-  //   if (user) {
-  //     if (user.provider === providerEnum.google) {
-  //       return this.loginWithGmail(req, res);
-  //     }
-  //     throw new ConflictException("Email already exists");
-  //   }
+    const [newUser] =
+      (await this.userModel.create({
+        data: [
+          {
+            firstName: given_name as string,
+            lastName: family_name as string,
+            profileImage: picture as string,
+            email: email as string,
+            confirmAt: new Date(),
+            provider: ProviderEnum.google,
+          },
+        ],
+      })) || [];
 
-  //   const [newUser] = await DBservice.create({
-  //     model: this.userModel,
-  //     data: [
-  //       {
-  //         fullName: name,
-  //         email,
-  //         picture,
-  //         confirmEmail: Date.now(),
-  //         provider: providerEnum.google,
-  //       },
-  //     ],
-  //   });
+    if (!newUser) {
+      throw new BadRequestException("Fail to signup with gmail");
+    }
 
-  //   const credentials = await generateLoginCreadentials({ user: newUser });
+    const credentials = await createLoginCredentials(newUser);
 
-  //   return res.status(201).json({
-  //     message: "User added successfully",
-  //     data: { credentials },
-  //   });
-  // };
+    return res.status(201).json({
+      message: "User added successfully",
+      data: { credentials },
+    });
+  };
 
-  // loginWithGmail = async (req: Request, res: Response): Promise<Response> => {
-  //   const { idToken } = req.body;
-  //   const { email, email_verified } = await this.verifyGoogleAccount({
-  //     idToken,
-  //   });
+  loginWithGmail = async (req: Request, res: Response): Promise<Response> => {
+    const { idToken }: IGmailDTO = req.body;
+    const { email } = await this.verifyGoogleAccount(idToken);
 
-  //   if (!email_verified) {
-  //     throw new BadRequestException("Not verified account");
-  //   }
+    const user = await this.userModel.findOne({
+      filter: {
+        email,
+        provider: ProviderEnum.google,
+      },
+    });
 
-  //   const user = await DBservice.findOne({
-  //     model: this.userModel,
-  //     filter: { email, provider: providerEnum.google },
-  //   });
+    if (!user) {
+      throw new NotFoundException("Invalid login data or provider");
+    }
 
-  //   if (!user) {
-  //     throw new NotFoundException("Invalid login data or provider");
-  //   }
+    const credentials = await createLoginCredentials(user);
 
-  //   const credentials = await generateLoginCreadentials({ user });
-
-  //   return res.status(200).json({
-  //     message: "Login successful",
-  //     data: { credentials },
-  //   });
-  // };
+    return res.status(200).json({
+      message: "Login successful",
+      data: { credentials },
+    });
+  };
 }
 
 export default new AuthenticationService();

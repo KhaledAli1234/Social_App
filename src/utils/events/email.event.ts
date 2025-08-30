@@ -22,3 +22,18 @@ emailEvent.on("confirmEmail", async (data: IEmail) => {
     console.error(`fail to send email`);
   }
 });
+
+
+emailEvent.on("resetPassword", async (data: IEmail) => {
+  try {
+    data.subject = "Reset-Account-Password";
+    data.html = verifyEmail({
+      otp: data.otp,
+      title: "reset code",
+    });
+
+    await sendEmail(data);
+  } catch (error) {
+    console.error(`fail to send email`);
+  }
+});
