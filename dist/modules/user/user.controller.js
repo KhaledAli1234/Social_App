@@ -42,8 +42,11 @@ const authentication_middleware_1 = require("../../middleware/authentication.mid
 const validation_middleware_1 = require("../../middleware/validation.middleware");
 const validators = __importStar(require("./user.validation"));
 const token_secuirty_1 = require("../../utils/secuirty/token.secuirty");
+const cloud_multer_1 = require("../../utils/multer/cloud.multer");
 const router = (0, express_1.Router)();
 router.get("/", (0, authentication_middleware_1.authentication)(), user_service_1.default.profile);
+router.patch("/profile-image", (0, authentication_middleware_1.authentication)(), (0, cloud_multer_1.cloudFileUploud)({ validation: cloud_multer_1.fileValidation.image, storageApproach: cloud_multer_1.StorageEnum.disk }).single("image"), user_service_1.default.profileImage);
+router.patch("/profile-cover-image", (0, authentication_middleware_1.authentication)(), (0, cloud_multer_1.cloudFileUploud)({ validation: cloud_multer_1.fileValidation.image, storageApproach: cloud_multer_1.StorageEnum.disk }).array("images", 2), user_service_1.default.profileCoverImage);
 router.post("/refresh-token", (0, authentication_middleware_1.authentication)(token_secuirty_1.TokenEnum.refresh), user_service_1.default.refreshToken);
 router.post("/logout", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.logout), user_service_1.default.logout);
 exports.default = router;

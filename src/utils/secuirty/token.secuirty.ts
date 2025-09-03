@@ -136,7 +136,7 @@ export const decodedToken = async ({
     throw new BadRequestException("Not register account");
   }
 
-  if (user.changeCredentialsTime?.getTime() || 0 > decoded.iat * 1000) {
+  if ((user.changeCredentialsTime?.getTime() || 0) > decoded.iat * 1000) {
     throw new UnauthorizedException("invalid login credentials");
   }
 
@@ -168,7 +168,9 @@ export const createLoginCredentials = async (user: HUserDocument) => {
   return { access_token, refresh_token };
 };
 
-export const createRevokeToken = async (decoded: JwtPayload):Promise<HTokenDocument> => {
+export const createRevokeToken = async (
+  decoded: JwtPayload
+): Promise<HTokenDocument> => {
   const tokenModel = new TokenRepository(TokenModel);
 
   const [result] =
@@ -184,8 +186,8 @@ export const createRevokeToken = async (decoded: JwtPayload):Promise<HTokenDocum
       ],
     })) || [];
 
-    if (!result) {
-        throw new BadRequestException("fail to revoke this token")
-    }
-    return result;
+  if (!result) {
+    throw new BadRequestException("fail to revoke this token");
+  }
+  return result;
 };

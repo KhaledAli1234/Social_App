@@ -3,16 +3,44 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const token_secuirty_1 = require("../../utils/secuirty/token.secuirty");
 const User_model_1 = require("../../DB/models/User.model");
 const user_repository_1 = require("../../DB/repository/user.repository");
-const token_repository_1 = require("../../DB/repository/token.repository");
-const Token_model_1 = require("../../DB/models/Token.model");
+const s3_config_1 = require("../../utils/multer/s3.config");
+const cloud_multer_1 = require("../../utils/multer/cloud.multer");
 class AuthenticationService {
     userModel = new user_repository_1.UserRepository(User_model_1.UserModel);
-    tokenModel = new token_repository_1.TokenRepository(Token_model_1.TokenModel);
     constructor() { }
     profile = async (req, res) => {
         return res.status(200).json({
             message: "Profile fetched",
             data: { user: req.user?._id, decoded: req.decoded?.iat },
+        });
+    };
+    profileImage = async (req, res) => {
+        const { ContentType, originalname, } = req.body;
+        const { url, key } = await (0, s3_config_1.createPresignedUploadLink)({
+            ContentType,
+            originalname,
+            path: `users/${req.decoded?._id}`,
+        });
+        return res.status(200).json({
+            message: "Profile fetched",
+            data: {
+                url,
+                key,
+            },
+        });
+    };
+    profileCoverImage = async (req, res) => {
+        const urls = await (0, s3_config_1.uploadFiles)({
+            storageApproach: cloud_multer_1.StorageEnum.disk,
+            files: req.files,
+            path: `user/${req.decoded?._id}/cover`,
+            useLarge: true,
+        });
+        return res.status(200).json({
+            message: "Profile fetched",
+            data: {
+                urls,
+            },
         });
     };
     logout = async (req, res) => {

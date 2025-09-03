@@ -94,7 +94,7 @@ const decodedToken = async ({ authorization, tokenType = TokenEnum.access, }) =>
     if (!user) {
         throw new error_response_1.BadRequestException("Not register account");
     }
-    if (user.changeCredentialsTime?.getTime() || 0 > decoded.iat * 1000) {
+    if ((user.changeCredentialsTime?.getTime() || 0) > decoded.iat * 1000) {
         throw new error_response_1.UnauthorizedException("invalid login credentials");
     }
     return { user, decoded };

@@ -9,10 +9,16 @@ import userController from "./modules/user/user.controller";
 import cors from "cors";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
-import { globalErrorHandling } from "./utils/response/error.response";
+import {
+  BadRequestException,
+  globalErrorHandling,
+} from "./utils/response/error.response";
 import connectDB from "./DB/connection.db";
+import { createGetPresignedLink, getFile } from "./utils/multer/s3.config";
+import { promisify } from "node:util";
+import { pipeline } from "node:stream";
 
-
+const createS3WriteStreamPipe = promisify(pipeline);
 
 const bootstrap = async (): Promise<void> => {
   const app: Express = express();
@@ -30,10 +36,66 @@ const bootstrap = async (): Promise<void> => {
   app.use(cors());
   app.use(helmet());
 
-  await connectDB()
+  await connectDB();
 
   app.use("/auth", authController);
   app.use("/user", userController);
+
+  app.get(
+    "/upload/*path",
+    async (req: Request, res: Response): Promise<void> => {
+      const { downloadName, download = "false" } = req.query as {
+        downloadName?: string;
+        download?: string;
+      };
+      const { path } = req.params as unknown as { path: string[] };
+      const Key = path.join("/");
+      const s3Response = await getFile({ Key });
+      console.log({ s3Response });
+      if (!s3Response?.Body) {
+        throw new BadRequestException("fail to fetch this asset");
+      }
+      res.setHeader(
+        "Content-type",
+        `${s3Response.ContentType || "application/octet-stream"}`
+      );
+      if (download === "true") {
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${downloadName || Key.split("/").pop()}"`
+        );
+      }
+
+      return await createS3WriteStreamPipe(
+        s3Response.Body as NodeJS.ReadableStream,
+        res
+      );
+    }
+  );
+
+  app.get(
+    "/upload/pre-signed/*path",
+    async (req: Request, res: Response): Promise<Response> => {
+      const {
+        downloadName,
+        download = "false",
+        expiresIn = 120,
+      } = req.query as {
+        downloadName?: string;
+        download?: string;
+        expiresIn?: number;
+      };
+      const { path } = req.params as unknown as { path: string[] };
+      const Key = path.join("/");
+      const url = await createGetPresignedLink({
+        Key,
+        downloadName: downloadName as string,
+        download,
+        expiresIn
+      });
+      return res.json({ message: "Done", data: { url } });
+    }
+  );
 
   app.get("/", (req: Request, res: Response) => {
     res.json({ message: "Welcome to social app backend landing page ❤️🍀" });
