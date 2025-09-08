@@ -14,7 +14,10 @@ import {
   globalErrorHandling,
 } from "./utils/response/error.response";
 import connectDB from "./DB/connection.db";
-import { createGetPresignedLink, getFile } from "./utils/multer/s3.config";
+import {
+  createGetPresignedLink,
+  getFile,
+} from "./utils/multer/s3.config";
 import { promisify } from "node:util";
 import { pipeline } from "node:stream";
 
@@ -91,7 +94,7 @@ const bootstrap = async (): Promise<void> => {
         Key,
         downloadName: downloadName as string,
         download,
-        expiresIn
+        expiresIn,
       });
       return res.json({ message: "Done", data: { url } });
     }

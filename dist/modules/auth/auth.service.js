@@ -4,10 +4,11 @@ const User_model_1 = require("../../DB/models/User.model");
 const user_repository_1 = require("../../DB/repository/user.repository");
 const error_response_1 = require("../../utils/response/error.response");
 const hash_secuirty_1 = require("../../utils/secuirty/hash.secuirty");
-const email_event_1 = require("../../utils/events/email.event");
+const email_event_1 = require("../../utils/email/email.event");
 const otp_1 = require("../../utils/otp");
 const token_secuirty_1 = require("../../utils/secuirty/token.secuirty");
 const google_auth_library_1 = require("google-auth-library");
+const success_response_1 = require("../../utils/response/success.response");
 class AuthenticationService {
     userModel = new user_repository_1.UserRepository(User_model_1.UserModel);
     constructor() { }
@@ -48,9 +49,11 @@ class AuthenticationService {
         });
         user.save();
         email_event_1.emailEvent.emit("confirmEmail", { to: email, otp });
-        return res
-            .status(201)
-            .json({ message: "User created successfully", data: { user } });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "User created successfully",
+            statusCode: 201,
+        });
     };
     login = async (req, res) => {
         const { email, password } = req.body;
@@ -71,9 +74,11 @@ class AuthenticationService {
             throw new error_response_1.BadRequestException("Invalid login data");
         }
         const credentials = await (0, token_secuirty_1.createLoginCredentials)(user);
-        return res
-            .status(200)
-            .json({ message: "Login successful", data: { credentials } });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "Login successful",
+            data: { credentials },
+        });
     };
     confirmEmail = async (req, res) => {
         const { email, otp } = req.body;
@@ -97,7 +102,10 @@ class AuthenticationService {
                 $unset: { confirmEmailOtp: 1 },
             },
         });
-        return res.status(200).json({ message: "Email verified successfully" });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "Email verified successfully",
+        });
     };
     sendForgotPassword = async (req, res) => {
         const { email } = req.body;
@@ -127,7 +135,10 @@ class AuthenticationService {
             to: email,
             otp,
         });
-        return res.status(200).json({ message: "OTP sent successfully" });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "OTP sent successfully",
+        });
     };
     verifyForgotPassword = async (req, res) => {
         const { email, otp } = req.body;
@@ -144,7 +155,10 @@ class AuthenticationService {
         if (!(await (0, hash_secuirty_1.compareHash)(otp, user.resetPasswordOtp))) {
             throw new error_response_1.ConflictException("Invalid OTP");
         }
-        return res.status(200).json({ message: "OTP verified successfully" });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "OTP verified successfully",
+        });
     };
     resetForgotPassword = async (req, res) => {
         const { email, otp, password } = req.body;
@@ -172,7 +186,10 @@ class AuthenticationService {
         if (!result.matchedCount) {
             throw new error_response_1.BadRequestException("Fail to  reset account password");
         }
-        return res.status(200).json({ message: "Password reset successfully" });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "Password reset successfully",
+        });
     };
     signupWithGmail = async (req, res) => {
         const { idToken } = req.body;
@@ -204,8 +221,10 @@ class AuthenticationService {
             throw new error_response_1.BadRequestException("Fail to signup with gmail");
         }
         const credentials = await (0, token_secuirty_1.createLoginCredentials)(newUser);
-        return res.status(201).json({
+        return (0, success_response_1.successResponse)({
+            res,
             message: "User added successfully",
+            statusCode: 201,
             data: { credentials },
         });
     };
@@ -222,7 +241,8 @@ class AuthenticationService {
             throw new error_response_1.NotFoundException("Invalid login data or provider");
         }
         const credentials = await (0, token_secuirty_1.createLoginCredentials)(user);
-        return res.status(200).json({
+        return (0, success_response_1.successResponse)({
+            res,
             message: "Login successful",
             data: { credentials },
         });

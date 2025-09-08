@@ -57,7 +57,7 @@ const bootstrap = async () => {
             Key,
             downloadName: downloadName,
             download,
-            expiresIn
+            expiresIn,
         });
         return res.json({ message: "Done", data: { url } });
     });

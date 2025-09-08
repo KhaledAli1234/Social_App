@@ -16,10 +16,12 @@ import {
   NotFoundException,
 } from "../../utils/response/error.response";
 import { compareHash, generatHash } from "../../utils/secuirty/hash.secuirty";
-import { emailEvent } from "../../utils/events/email.event";
+import { emailEvent } from "../../utils/email/email.event";
 import { generateNumberOtp } from "../../utils/otp";
 import { createLoginCredentials } from "../../utils/secuirty/token.secuirty";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
+import { successResponse } from "../../utils/response/success.response";
+import { ILoginResponse } from "./auth.entities";
 // import { customAlphabet } from "nanoid";
 
 class AuthenticationService {
@@ -81,9 +83,11 @@ class AuthenticationService {
 
     emailEvent.emit("confirmEmail", { to: email, otp });
 
-    return res
-      .status(201)
-      .json({ message: "User created successfully", data: { user } });
+    return successResponse({
+      res,
+      message: "User created successfully",
+      statusCode: 201,
+    });
   };
 
   login = async (req: Request, res: Response): Promise<Response> => {
@@ -111,9 +115,11 @@ class AuthenticationService {
 
     const credentials = await createLoginCredentials(user);
 
-    return res
-      .status(200)
-      .json({ message: "Login successful", data: { credentials } });
+    return successResponse<ILoginResponse>({
+      res,
+      message: "Login successful",
+      data: { credentials },
+    });
   };
 
   confirmEmail = async (req: Request, res: Response): Promise<Response> => {
@@ -141,7 +147,10 @@ class AuthenticationService {
       },
     });
 
-    return res.status(200).json({ message: "Email verified successfully" });
+    return successResponse({
+      res,
+      message: "Email verified successfully",
+    });
   };
 
   sendForgotPassword = async (
@@ -180,7 +189,10 @@ class AuthenticationService {
       otp,
     });
 
-    return res.status(200).json({ message: "OTP sent successfully" });
+    return successResponse({
+      res,
+      message: "OTP sent successfully",
+    });
   };
 
   verifyForgotPassword = async (
@@ -205,7 +217,10 @@ class AuthenticationService {
       throw new ConflictException("Invalid OTP");
     }
 
-    return res.status(200).json({ message: "OTP verified successfully" });
+    return successResponse({
+      res,
+      message: "OTP verified successfully",
+    });
   };
 
   resetForgotPassword = async (
@@ -243,7 +258,10 @@ class AuthenticationService {
       throw new BadRequestException("Fail to  reset account password");
     }
 
-    return res.status(200).json({ message: "Password reset successfully" });
+    return successResponse({
+      res,
+      message: "Password reset successfully",
+    });
   };
 
   signupWithGmail = async (req: Request, res: Response): Promise<Response> => {
@@ -284,8 +302,10 @@ class AuthenticationService {
 
     const credentials = await createLoginCredentials(newUser);
 
-    return res.status(201).json({
+    return successResponse<ILoginResponse>({
+      res,
       message: "User added successfully",
+      statusCode: 201,
       data: { credentials },
     });
   };
@@ -307,7 +327,8 @@ class AuthenticationService {
 
     const credentials = await createLoginCredentials(user);
 
-    return res.status(200).json({
+    return successResponse<ILoginResponse>({
+      res,
       message: "Login successful",
       data: { credentials },
     });
