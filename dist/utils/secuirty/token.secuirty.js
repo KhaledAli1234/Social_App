@@ -5,9 +5,8 @@ const uuid_1 = require("uuid");
 const jsonwebtoken_1 = require("jsonwebtoken");
 const User_model_1 = require("../../DB/models/User.model");
 const error_response_1 = require("../response/error.response");
-const user_repository_1 = require("../../DB/repository/user.repository");
-const token_repository_1 = require("../../DB/repository/token.repository");
 const Token_model_1 = require("../../DB/models/Token.model");
+const repository_1 = require("../../DB/repository");
 var SignatureLevelEnum;
 (function (SignatureLevelEnum) {
     SignatureLevelEnum["bearer"] = "Bearer";
@@ -67,8 +66,8 @@ const getSignature = async (signatureLevel = SignatureLevelEnum.bearer) => {
 };
 exports.getSignature = getSignature;
 const decodedToken = async ({ authorization, tokenType = TokenEnum.access, }) => {
-    const userModel = new user_repository_1.UserRepository(User_model_1.UserModel);
-    const tokenModel = new token_repository_1.TokenRepository(Token_model_1.TokenModel);
+    const userModel = new repository_1.UserRepository(User_model_1.UserModel);
+    const tokenModel = new repository_1.TokenRepository(Token_model_1.TokenModel);
     const [bearerKey, token] = authorization?.split(" ") || [];
     if (!bearerKey || !token) {
         throw new error_response_1.UnauthorizedException("Token is missing");
@@ -124,7 +123,7 @@ const createLoginCredentials = async (user) => {
 };
 exports.createLoginCredentials = createLoginCredentials;
 const createRevokeToken = async (decoded) => {
-    const tokenModel = new token_repository_1.TokenRepository(Token_model_1.TokenModel);
+    const tokenModel = new repository_1.TokenRepository(Token_model_1.TokenModel);
     const [result] = (await tokenModel.create({
         data: [
             {

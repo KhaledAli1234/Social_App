@@ -1,4 +1,6 @@
 import { HydratedDocument, model, models, Schema, Types } from "mongoose";
+import { generatHash } from "../../utils/secuirty/hash.secuirty";
+import { emailEvent } from "../../utils/email/email.event";
 
 export enum GenderEnum {
   male = "male",
@@ -45,8 +47,6 @@ export interface IUser {
   createdAt: Date;
   updatedAt?: Date;
 
-  isVerified: boolean;
-  verificationCode: string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -89,10 +89,12 @@ const userSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
+    strictQuery: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
+export type HUserDocument = HydratedDocument<IUser>;
 
 userSchema
   .virtual("username")
@@ -104,5 +106,46 @@ userSchema
     return this.firstName + " " + this.lastName;
   });
 
+userSchema.pre(
+  "save",
+  async function (
+    this: HUserDocument & { wasNew: boolean; confirmEmailPlainOtp?: string },
+    next
+  ) {
+    this.wasNew = this.isNew;
+    if (this.isModified("password")) {
+      this.password = await generatHash(this.password);
+    }
+    if (this.isModified("confirmEmailOtp")) {
+      this.confirmEmailPlainOtp = this.confirmEmailOtp as string;
+      this.confirmEmailOtp = await generatHash(this.confirmEmailOtp as string);
+    }
+    next();
+  }
+);
+
+userSchema.post("save", async function (doc, next) {
+  const that = this as HUserDocument & {
+    wasNew: boolean;
+    confirmEmailPlainOtp?: string;
+  };
+  if (that.wasNew && that.confirmEmailPlainOtp) {
+    emailEvent.emit("confirmEmail", {
+      to: this.email,
+      otp: that.confirmEmailPlainOtp,
+    });
+  }
+  next();
+});
+
+userSchema.pre(["find", "findOne"], function (next) {
+  const query = this.getQuery();
+  if (query.paranoid === false) {
+    this.setQuery({ ...query });
+  } else {
+    this.setQuery({ ...query, freezedAt: { $exists: false } });
+  }
+  next();
+});
+
 export const UserModel = models.user || model<IUser>("User", userSchema);
-export type HUserDocument = HydratedDocument<IUser>;

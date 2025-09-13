@@ -3,8 +3,8 @@ import { config } from "dotenv";
 config({ path: resolve("./config/.env.development") });
 import type { Request, Response, Express } from "express";
 import express from "express";
-import authController from "./modules/auth/auth.controller";
-import userController from "./modules/user/user.controller";
+
+import { authRouter, postRouter, userRouter } from "./modules";
 
 import cors from "cors";
 import helmet from "helmet";
@@ -14,10 +14,7 @@ import {
   globalErrorHandling,
 } from "./utils/response/error.response";
 import connectDB from "./DB/connection.db";
-import {
-  createGetPresignedLink,
-  getFile,
-} from "./utils/multer/s3.config";
+import { createGetPresignedLink, getFile } from "./utils/multer/s3.config";
 import { promisify } from "node:util";
 import { pipeline } from "node:stream";
 
@@ -41,8 +38,9 @@ const bootstrap = async (): Promise<void> => {
 
   await connectDB();
 
-  app.use("/auth", authController);
-  app.use("/user", userController);
+  app.use("/auth", authRouter);
+  app.use("/user", userRouter);
+  app.use("/post", postRouter);
 
   app.get(
     "/upload/*path",

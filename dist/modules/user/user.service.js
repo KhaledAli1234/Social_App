@@ -8,7 +8,7 @@ const cloud_multer_1 = require("../../utils/multer/cloud.multer");
 const error_response_1 = require("../../utils/response/error.response");
 const s3_events_1 = require("../../utils/multer/s3.events");
 const success_response_1 = require("../../utils/response/success.response");
-class AuthenticationService {
+class UserService {
     userModel = new user_repository_1.UserRepository(User_model_1.UserModel);
     constructor() { }
     profile = async (req, res) => {
@@ -179,4 +179,4 @@ class AuthenticationService {
         });
     };
 }
-exports.default = new AuthenticationService();
+exports.default = new UserService();

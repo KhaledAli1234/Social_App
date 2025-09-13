@@ -7,8 +7,7 @@ const node_path_1 = require("node:path");
 const dotenv_1 = require("dotenv");
 (0, dotenv_1.config)({ path: (0, node_path_1.resolve)("./config/.env.development") });
 const express_1 = __importDefault(require("express"));
-const auth_controller_1 = __importDefault(require("./modules/auth/auth.controller"));
-const user_controller_1 = __importDefault(require("./modules/user/user.controller"));
+const modules_1 = require("./modules");
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_rate_limit_1 = require("express-rate-limit");
@@ -32,8 +31,9 @@ const bootstrap = async () => {
     app.use((0, cors_1.default)());
     app.use((0, helmet_1.default)());
     await (0, connection_db_1.default)();
-    app.use("/auth", auth_controller_1.default);
-    app.use("/user", user_controller_1.default);
+    app.use("/auth", modules_1.authRouter);
+    app.use("/user", modules_1.userRouter);
+    app.use("/post", modules_1.postRouter);
     app.get("/upload/*path", async (req, res) => {
         const { downloadName, download = "false" } = req.query;
         const { path } = req.params;

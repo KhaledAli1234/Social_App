@@ -9,7 +9,6 @@ import type {
   IVerifyForgotPasswordBodyInputsDTO,
 } from "./auth.dto";
 import { ProviderEnum, UserModel } from "../../DB/models/User.model";
-import { UserRepository } from "../../DB/repository/user.repository";
 import {
   BadRequestException,
   ConflictException,
@@ -22,6 +21,7 @@ import { createLoginCredentials } from "../../utils/secuirty/token.secuirty";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { successResponse } from "../../utils/response/success.response";
 import { ILoginResponse } from "./auth.entities";
+import { UserRepository } from "../../DB/repository";
 // import { customAlphabet } from "nanoid";
 
 class AuthenticationService {
@@ -73,16 +73,13 @@ class AuthenticationService {
         {
           username,
           email,
-          password: await generatHash(password),
-          confirmEmailOtp: await generatHash(String(otp)),
+          password,
+          confirmEmailOtp: `${otp}`,
         },
       ],
     });
 
     user.save();
-
-    emailEvent.emit("confirmEmail", { to: email, otp });
-
     return successResponse({
       res,
       message: "User created successfully",

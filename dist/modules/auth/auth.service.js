@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const User_model_1 = require("../../DB/models/User.model");
-const user_repository_1 = require("../../DB/repository/user.repository");
 const error_response_1 = require("../../utils/response/error.response");
 const hash_secuirty_1 = require("../../utils/secuirty/hash.secuirty");
 const email_event_1 = require("../../utils/email/email.event");
@@ -9,8 +8,9 @@ const otp_1 = require("../../utils/otp");
 const token_secuirty_1 = require("../../utils/secuirty/token.secuirty");
 const google_auth_library_1 = require("google-auth-library");
 const success_response_1 = require("../../utils/response/success.response");
+const repository_1 = require("../../DB/repository");
 class AuthenticationService {
-    userModel = new user_repository_1.UserRepository(User_model_1.UserModel);
+    userModel = new repository_1.UserRepository(User_model_1.UserModel);
     constructor() { }
     verifyGoogleAccount = async (idToken) => {
         const client = new google_auth_library_1.OAuth2Client();
@@ -42,13 +42,12 @@ class AuthenticationService {
                 {
                     username,
                     email,
-                    password: await (0, hash_secuirty_1.generatHash)(password),
-                    confirmEmailOtp: await (0, hash_secuirty_1.generatHash)(String(otp)),
+                    password,
+                    confirmEmailOtp: `${otp}`,
                 },
             ],
         });
         user.save();
-        email_event_1.emailEvent.emit("confirmEmail", { to: email, otp });
         return (0, success_response_1.successResponse)({
             res,
             message: "User created successfully",

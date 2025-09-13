@@ -37,7 +37,7 @@ import { successResponse } from "../../utils/response/success.response";
 import { IUserResponse, IProfileImageResponse } from "./user.entities";
 import { ILoginResponse } from "../auth/auth.entities";
 
-class AuthenticationService {
+class UserService {
   private userModel = new UserRepository(UserModel);
   constructor() {}
 
@@ -240,4 +240,4 @@ class AuthenticationService {
   };
 }
 
-export default new AuthenticationService();
+export default new UserService();
