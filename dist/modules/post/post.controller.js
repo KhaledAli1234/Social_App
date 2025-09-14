@@ -45,4 +45,5 @@ const validation_middleware_1 = require("../../middleware/validation.middleware"
 const router = (0, express_1.Router)();
 router.post("/", (0, authentication_middleware_1.authentication)(), (0, cloud_multer_1.cloudFileUploud)({ validation: cloud_multer_1.fileValidation.image }).array("attachments", 2), (0, validation_middleware_1.validation)(validators.createPost), post_service_1.default.createPost);
 router.patch("/:postId/like", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.likePost), post_service_1.default.likePost);
+router.post("/send-email", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.sendTagEmail), post_service_1.default.sendTagEmail);
 exports.default = router;
