@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.likePost = exports.createPost = void 0;
+exports.sendTagEmail = exports.likePost = exports.createPost = void 0;
 const zod_1 = require("zod");
 const Post_model_1 = require("../../DB/models/Post.model");
 const validation_middleware_1 = require("../../middleware/validation.middleware");
@@ -41,5 +41,11 @@ exports.likePost = {
     }),
     query: zod_1.z.strictObject({
         action: zod_1.z.enum(Post_model_1.LikeActionEnum).default(Post_model_1.LikeActionEnum.like),
+    }),
+};
+exports.sendTagEmail = {
+    body: zod_1.z.strictObject({
+        postId: validation_middleware_1.generalFields.id,
+        tags: zod_1.z.array(validation_middleware_1.generalFields.id).min(1).max(10),
     }),
 };

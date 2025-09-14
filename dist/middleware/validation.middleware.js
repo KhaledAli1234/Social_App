@@ -48,6 +48,7 @@ exports.generalFields = {
         .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/),
     confirmPassword: zod_1.default.string(),
     otp: zod_1.default.string().regex(/^\d{6}$/),
+    phone: zod_1.default.string().regex(/^(002|\+2)?01[0125][0-9]{8}$/),
     file: function (mimetype) {
         return zod_1.default
             .strictObject({

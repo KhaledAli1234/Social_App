@@ -15,6 +15,8 @@ import { v4 as uuid } from "uuid";
 import { deleteFiles, uploadFiles } from "../../utils/multer/s3.config";
 import { ILikePostQueryInputsDTO } from "./post.dto";
 import { UpdateQuery } from "mongoose";
+import { emailEvent } from "../../utils/email/email.event";
+import { generateNumberOtp } from "../../utils/otp";
 class PostService {
   private postModel = new PostRepository(PostModel);
   private userModel = new UserRepository(UserModel);
@@ -77,6 +79,28 @@ class PostService {
     }
 
     return successResponse({ res });
+  };
+  sendTagEmail = async (req: Request, res: Response): Promise<Response> => {
+    const { postId, tags } = req.body;
+
+    const post = await this.postModel.findById(postId);
+    if (!post) {
+      throw new NotFoundException("Post not found");
+    }
+
+    const users = await this.userModel.find({ filter: { $in: tags } });
+
+    users.forEach((user) => {
+      emailEvent.emit("tags", {
+        to: user.email,
+        otp: generateNumberOtp(),
+      });
+    });
+
+    return successResponse({
+      res,
+      message: "Tag emails sent successfully",
+    });
   };
 }
 

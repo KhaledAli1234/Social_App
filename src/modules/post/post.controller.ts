@@ -25,4 +25,6 @@ router.patch(
   postService.likePost
 );
 
+// router.post("/send-email", authentication(), validation(validators.sendEmail), postService.sendEmailWithTags);
+
 export default router;

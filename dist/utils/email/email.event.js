@@ -31,3 +31,25 @@ exports.emailEvent.on("resetPassword", async (data) => {
         console.error(`fail to send email`);
     }
 });
+exports.emailEvent.on("twoFactorOtp", async (data) => {
+    try {
+        data.subject = "Enable Request";
+        data.html = (0, verify_email_templates_1.verifyEmail)({
+            otp: data.otp,
+            title: "Two-Factor Authentication",
+        });
+        await (0, send_email_1.sendEmail)(data);
+    }
+    catch (error) {
+        console.error(`fail to send email`);
+    }
+});
+exports.emailEvent.on("tags", async (data) => {
+    try {
+        data.subject = data.subject || "Tagged in a post";
+        await (0, send_email_1.sendEmail)(data);
+    }
+    catch (error) {
+        console.error(`fail to send tag email`);
+    }
+});

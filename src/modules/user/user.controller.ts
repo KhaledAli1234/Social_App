@@ -18,5 +18,11 @@ router.patch("/profile-image", authentication(), userService.profileImage);
 router.patch("/profile-cover-image", authentication(), cloudFileUploud({validation:fileValidation.image , storageApproach :StorageEnum.disk}).array("images" , 2), userService.profileCoverImage);
 router.post("/refresh-token", authentication(TokenEnum.refresh), userService.refreshToken);
 router.post("/logout", authentication(), validation(validators.logout), userService.logout);
+router.patch("/update-password", authentication(), validation(validators.updatePassword), userService.updatePassword);
+router.patch("/update-basic-info", authentication(), validation(validators.updateBasicInfo), userService.updateBasicInfo);
+router.post("/update-email/request", authentication(), validation(validators.updateEmail), userService.requestUpdateEmail);
+router.post("/update-email/confirm", authentication(), validation(validators.confirmEmail), userService.confirmUpdateEmail);
+router.post("/enable", authentication(), userService.enableTwoStep);
+router.post("/confirm", authentication(), validation(validators.confirmTwoStep), userService.confirmEnableTwoStep);
 
 export default router;

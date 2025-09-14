@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { LogoutEnum } from "../../utils/secuirty/token.secuirty";
 import { Types } from "mongoose";
+import { generalFields } from "../../middleware/validation.middleware";
 
 export const logout = {
   body: z.strictObject({
@@ -25,7 +26,6 @@ export const freezeAccount = {
     ),
 };
 
-
 export const restoreAccount = {
   params: z
     .object({
@@ -42,4 +42,42 @@ export const restoreAccount = {
     ),
 };
 
-export const hardDelete = restoreAccount
+export const hardDelete = restoreAccount;
+
+export const updatePassword = {
+  body: z
+    .strictObject({
+      oldPassword: z.string().min(6),
+      newPassword: z.string().min(6),
+      confirmPassword: generalFields.confirmPassword,
+    })
+    .refine((data) => data.oldPassword !== data.newPassword, {
+      path: ["newPassword"],
+      message: "New password must be different from old password",
+    }),
+};
+
+export const updateBasicInfo = {
+  body: z.strictObject({
+    username: generalFields.username.optional(),
+    phone: generalFields.phone.optional(),
+  }),
+};
+
+export const updateEmail = {
+  body: z.strictObject({
+    newEmail: generalFields.email,
+  }),
+};
+
+export const confirmEmail = {
+  body: z.strictObject({
+    otp: generalFields.otp,
+  }),
+};
+
+export const confirmTwoStep = {
+  body: z.strictObject({
+    otp: generalFields.otp,
+  }),
+};

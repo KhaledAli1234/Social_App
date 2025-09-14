@@ -53,4 +53,10 @@ router.patch("/profile-image", (0, authentication_middleware_1.authentication)()
 router.patch("/profile-cover-image", (0, authentication_middleware_1.authentication)(), (0, cloud_multer_1.cloudFileUploud)({ validation: cloud_multer_1.fileValidation.image, storageApproach: cloud_multer_1.StorageEnum.disk }).array("images", 2), user_service_1.default.profileCoverImage);
 router.post("/refresh-token", (0, authentication_middleware_1.authentication)(token_secuirty_1.TokenEnum.refresh), user_service_1.default.refreshToken);
 router.post("/logout", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.logout), user_service_1.default.logout);
+router.patch("/update-password", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.updatePassword), user_service_1.default.updatePassword);
+router.patch("/update-basic-info", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.updateBasicInfo), user_service_1.default.updateBasicInfo);
+router.post("/update-email/request", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.updateEmail), user_service_1.default.requestUpdateEmail);
+router.post("/update-email/confirm", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.confirmEmail), user_service_1.default.confirmUpdateEmail);
+router.post("/enable", (0, authentication_middleware_1.authentication)(), user_service_1.default.enableTwoStep);
+router.post("/confirm", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.confirmTwoStep), user_service_1.default.confirmEnableTwoStep);
 exports.default = router;

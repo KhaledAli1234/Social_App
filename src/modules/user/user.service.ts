@@ -36,6 +36,10 @@ import { s3Event } from "../../utils/multer/s3.events";
 import { successResponse } from "../../utils/response/success.response";
 import { IUserResponse, IProfileImageResponse } from "./user.entities";
 import { ILoginResponse } from "../auth/auth.entities";
+import { compare} from "bcrypt";
+import { generateNumberOtp } from "../../utils/otp";
+import { emailEvent } from "../../utils/email/email.event";
+
 
 class UserService {
   private userModel = new UserRepository(UserModel);
@@ -237,6 +241,125 @@ class UserService {
       res,
       message: "deleted successful",
     });
+  };
+
+  updatePassword = async (req: Request, res: Response): Promise<Response> => {
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await this.userModel.findById({
+      id: req.user?._id as Types.ObjectId,
+    });
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const isMatch = await compare(oldPassword, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException("Invalid old password");
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return successResponse({
+      res,
+      message: "Password updated successfully",
+      data: { user },
+    });
+  };
+
+  updateBasicInfo = async (req: Request, res: Response): Promise<Response> => {
+
+    const user = await this.userModel.findOneAndUpdate({
+      filter: {
+        id: req.user?._id,
+      },
+      update: req.body,
+    });
+
+    if (!user) {
+      throw new NotFoundException("Invalid account");
+    }
+
+    return successResponse({
+      res,
+      message: "User info updated successfully",
+      data: { user },
+    });
+  };
+
+  requestUpdateEmail = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const { newEmail } = req.body;
+    const otp = generateNumberOtp();
+
+    emailEvent.emit("confirmEmail", {
+      to: newEmail,
+      otp,
+    });
+
+    await this.userModel.findByIdAndUpdate({
+      id: req.user?._id as Types.ObjectId,
+      update: { pendingEmail: newEmail, emailOtp: otp },
+    });
+
+    return successResponse({ res, message: "OTP sent to new email" });
+  };
+
+  confirmUpdateEmail = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const { otp } = req.body;
+
+    const user = await this.userModel.findById({
+      id: req.user?._id as Types.ObjectId,
+    });
+
+    if (!user) throw new BadRequestException("User not found");
+    if (user.emailOtp !== otp) throw new BadRequestException("Invalid OTP");
+
+    user.email = user.pendingEmail!;
+    user.pendingEmail = undefined as unknown as string;
+    user.emailOtp = undefined as unknown as string;
+
+    await user.save();
+
+    return successResponse({ res, message: "Email updated successfully" });
+  };
+
+  enableTwoStep = async (req: Request, res: Response): Promise<Response> => {
+    const otp = generateNumberOtp();
+    await this.userModel.findByIdAndUpdate({
+      id: req.user?._id as Types.ObjectId,
+      update: { twoStepOtp: otp },
+    });
+    emailEvent.emit("twoFactorOtp", {
+      to: req.user?.email!,
+      otp,
+    });
+
+    return successResponse({ res, message: "OTP sent to your email" });
+  };
+
+  confirmEnableTwoStep = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const { otp } = req.body;
+    const user = await this.userModel.findById({
+      id: req.user?._id as Types.ObjectId,
+    });
+    if (!user || user.twoStepOtp !== otp)
+      throw new BadRequestException("Invalid OTP");
+
+    user.isTwoStepEnabled = true;
+    user.twoStepOtp = undefined as unknown as string;
+    await user.save();
+
+    return successResponse({ res, message: "Two-step verification enabled" });
   };
 }
 

@@ -8,6 +8,9 @@ const cloud_multer_1 = require("../../utils/multer/cloud.multer");
 const error_response_1 = require("../../utils/response/error.response");
 const s3_events_1 = require("../../utils/multer/s3.events");
 const success_response_1 = require("../../utils/response/success.response");
+const bcrypt_1 = require("bcrypt");
+const otp_1 = require("../../utils/otp");
+const email_event_1 = require("../../utils/email/email.event");
 class UserService {
     userModel = new user_repository_1.UserRepository(User_model_1.UserModel);
     constructor() { }
@@ -177,6 +180,94 @@ class UserService {
             res,
             message: "deleted successful",
         });
+    };
+    updatePassword = async (req, res) => {
+        const { oldPassword, newPassword } = req.body;
+        const user = await this.userModel.findById({
+            id: req.user?._id,
+        });
+        if (!user) {
+            throw new error_response_1.NotFoundException("User not found");
+        }
+        const isMatch = await (0, bcrypt_1.compare)(oldPassword, user.password);
+        if (!isMatch) {
+            throw new error_response_1.UnauthorizedException("Invalid old password");
+        }
+        user.password = newPassword;
+        await user.save();
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "Password updated successfully",
+            data: { user },
+        });
+    };
+    updateBasicInfo = async (req, res) => {
+        const user = await this.userModel.findOneAndUpdate({
+            filter: {
+                id: req.user?._id,
+            },
+            update: req.body,
+        });
+        if (!user) {
+            throw new error_response_1.NotFoundException("Invalid account");
+        }
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "User info updated successfully",
+            data: { user },
+        });
+    };
+    requestUpdateEmail = async (req, res) => {
+        const { newEmail } = req.body;
+        const otp = (0, otp_1.generateNumberOtp)();
+        email_event_1.emailEvent.emit("confirmEmail", {
+            to: newEmail,
+            otp,
+        });
+        await this.userModel.findByIdAndUpdate({
+            id: req.user?._id,
+            update: { pendingEmail: newEmail, emailOtp: otp },
+        });
+        return (0, success_response_1.successResponse)({ res, message: "OTP sent to new email" });
+    };
+    confirmUpdateEmail = async (req, res) => {
+        const { otp } = req.body;
+        const user = await this.userModel.findById({
+            id: req.user?._id,
+        });
+        if (!user)
+            throw new error_response_1.BadRequestException("User not found");
+        if (user.emailOtp !== otp)
+            throw new error_response_1.BadRequestException("Invalid OTP");
+        user.email = user.pendingEmail;
+        user.pendingEmail = undefined;
+        user.emailOtp = undefined;
+        await user.save();
+        return (0, success_response_1.successResponse)({ res, message: "Email updated successfully" });
+    };
+    enableTwoStep = async (req, res) => {
+        const otp = (0, otp_1.generateNumberOtp)();
+        await this.userModel.findByIdAndUpdate({
+            id: req.user?._id,
+            update: { twoStepOtp: otp },
+        });
+        email_event_1.emailEvent.emit("twoFactorOtp", {
+            to: req.user?.email,
+            otp,
+        });
+        return (0, success_response_1.successResponse)({ res, message: "OTP sent to your email" });
+    };
+    confirmEnableTwoStep = async (req, res) => {
+        const { otp } = req.body;
+        const user = await this.userModel.findById({
+            id: req.user?._id,
+        });
+        if (!user || user.twoStepOtp !== otp)
+            throw new error_response_1.BadRequestException("Invalid OTP");
+        user.isTwoStepEnabled = true;
+        user.twoStepOtp = undefined;
+        await user.save();
+        return (0, success_response_1.successResponse)({ res, message: "Two-step verification enabled" });
     };
 }
 exports.default = new UserService();

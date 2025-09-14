@@ -48,3 +48,10 @@ export const likePost = {
     action: z.enum(LikeActionEnum).default(LikeActionEnum.like),
   }),
 };
+
+export const sendTagEmail = {
+  body: z.strictObject({
+    postId: generalFields.id,     
+    tags: z.array(generalFields.id).min(1).max(10),
+  }),
+};

@@ -7,6 +7,8 @@ const User_model_1 = require("../../DB/models/User.model");
 const error_response_1 = require("../../utils/response/error.response");
 const uuid_1 = require("uuid");
 const s3_config_1 = require("../../utils/multer/s3.config");
+const email_event_1 = require("../../utils/email/email.event");
+const otp_1 = require("../../utils/otp");
 class PostService {
     postModel = new repository_1.PostRepository(Post_model_1.PostModel);
     userModel = new repository_1.UserRepository(User_model_1.UserModel);
@@ -60,6 +62,24 @@ class PostService {
             throw new error_response_1.NotFoundException("invalid postId or post not exist");
         }
         return (0, success_response_1.successResponse)({ res });
+    };
+    sendTagEmail = async (req, res) => {
+        const { postId, tags } = req.body;
+        const post = await this.postModel.findById(postId);
+        if (!post) {
+            throw new error_response_1.NotFoundException("Post not found");
+        }
+        const users = await this.userModel.find({ filter: { $in: tags } });
+        users.forEach((user) => {
+            email_event_1.emailEvent.emit("tags", {
+                to: user.email,
+                otp: (0, otp_1.generateNumberOtp)(),
+            });
+        });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "Tag emails sent successfully",
+        });
     };
 }
 exports.default = new PostService();

@@ -65,6 +65,7 @@ export const generalFields = {
     .regex(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/),
   confirmPassword: z.string(),
   otp: z.string().regex(/^\d{6}$/),
+  phone: z.string().regex(/^(002|\+2)?01[0125][0-9]{8}$/),
   file: function (mimetype: string[]) {
     return z
       .strictObject({

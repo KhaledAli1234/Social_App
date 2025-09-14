@@ -31,6 +31,9 @@ export interface IUser {
   phone?: string;
   address?: string;
 
+  pendingEmail?: string;
+  emailOtp?: string;
+
   profileImage?: string;
   temProfileImage?: string;
   coverImages?: string[];
@@ -39,6 +42,10 @@ export interface IUser {
   role: RoleEnum;
   provider: ProviderEnum;
 
+  isTwoStepEnabled?: boolean;
+  twoStepOtp?: string;
+  twoStepOtpExpire?: Date;
+
   freezedAt?: Date;
   freezedBy?: Types.ObjectId;
   restoredAt?: Date;
@@ -46,7 +53,6 @@ export interface IUser {
 
   createdAt: Date;
   updatedAt?: Date;
-
 }
 
 const userSchema = new Schema<IUser>(
@@ -70,6 +76,9 @@ const userSchema = new Schema<IUser>(
     phone: { type: String },
     address: { type: String },
 
+    pendingEmail: { type: String },
+    emailOtp: { type: String },
+
     profileImage: { type: String },
     temProfileImage: { type: String },
     coverImages: [String],
@@ -81,6 +90,10 @@ const userSchema = new Schema<IUser>(
       enum: ProviderEnum,
       default: ProviderEnum.system,
     },
+
+    isTwoStepEnabled: { type: Boolean, default: false },
+    twoStepOtp: { type: String },
+    twoStepOtpExpire: { type: Date },
 
     freezedAt: Date,
     freezedBy: { type: Schema.Types.ObjectId, ref: "User" },
