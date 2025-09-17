@@ -1,24 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PostModel = exports.LikeActionEnum = exports.AvailabilityEnum = exports.AllowCommentsEnum = void 0;
+exports.CommentModel = void 0;
 const mongoose_1 = require("mongoose");
-var AllowCommentsEnum;
-(function (AllowCommentsEnum) {
-    AllowCommentsEnum["allow"] = "allow";
-    AllowCommentsEnum["deny"] = "deny";
-})(AllowCommentsEnum || (exports.AllowCommentsEnum = AllowCommentsEnum = {}));
-var AvailabilityEnum;
-(function (AvailabilityEnum) {
-    AvailabilityEnum["public"] = "public";
-    AvailabilityEnum["friends"] = "friends";
-    AvailabilityEnum["onlyMe"] = "only-me";
-})(AvailabilityEnum || (exports.AvailabilityEnum = AvailabilityEnum = {}));
-var LikeActionEnum;
-(function (LikeActionEnum) {
-    LikeActionEnum["like"] = "like";
-    LikeActionEnum["unlike"] = "unlike";
-})(LikeActionEnum || (exports.LikeActionEnum = LikeActionEnum = {}));
-const postSchema = new mongoose_1.Schema({
+const commentSchema = new mongoose_1.Schema({
     content: {
         type: String,
         minlength: 2,
@@ -28,20 +12,11 @@ const postSchema = new mongoose_1.Schema({
         },
     },
     attachments: [String],
-    assetsFolderId: { type: String, required: true },
-    allowComments: {
-        type: String,
-        enum: AllowCommentsEnum,
-        default: AllowCommentsEnum.allow,
-    },
-    availability: {
-        type: String,
-        enum: AvailabilityEnum,
-        default: AvailabilityEnum.public,
-    },
     tags: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
     likes: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
     createdBy: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
+    postId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Post", required: true },
+    commentId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Comment" },
     freezedAt: Date,
     freezedBy: { type: mongoose_1.Schema.Types.ObjectId, ref: "User" },
     restoredAt: Date,
@@ -50,7 +25,7 @@ const postSchema = new mongoose_1.Schema({
     timestamps: true,
     strictQuery: true,
 });
-postSchema.pre(["findOneAndUpdate", "updateOne"], function (next) {
+commentSchema.pre(["findOneAndUpdate", "updateOne"], function (next) {
     const query = this.getQuery();
     if (query.paranoid === false) {
         this.setQuery({ ...query });
@@ -60,7 +35,7 @@ postSchema.pre(["findOneAndUpdate", "updateOne"], function (next) {
     }
     next();
 });
-postSchema.pre(["find", "findOne", "countDocuments"], function (next) {
+commentSchema.pre(["find", "findOne", "countDocuments"], function (next) {
     const query = this.getQuery();
     if (query.paranoid === false) {
         this.setQuery({ ...query });
@@ -70,7 +45,7 @@ postSchema.pre(["find", "findOne", "countDocuments"], function (next) {
     }
     next();
 });
-postSchema.pre(["updateOne", "findOneAndUpdate"], function (next) {
+commentSchema.pre(["updateOne", "findOneAndUpdate"], function (next) {
     const query = this.getQuery();
     if (query.paranoid === false) {
         this.setQuery({ ...query });
@@ -80,4 +55,4 @@ postSchema.pre(["updateOne", "findOneAndUpdate"], function (next) {
     }
     next();
 });
-exports.PostModel = mongoose_1.models.post || (0, mongoose_1.model)("Post", postSchema);
+exports.CommentModel = mongoose_1.models.Comment || (0, mongoose_1.model)("Comment", commentSchema);

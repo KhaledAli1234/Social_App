@@ -11,13 +11,6 @@ import {
   IRestoreAccountDTO,
 } from "./user.dto";
 import { Types, UpdateQuery } from "mongoose";
-import {
-  HUserDocument,
-  IUser,
-  RoleEnum,
-  UserModel,
-} from "../../DB/models/User.model";
-import { UserRepository } from "../../DB/repository/user.repository";
 import { JwtPayload } from "jsonwebtoken";
 import {
   createPresignedUploadLink,
@@ -36,10 +29,16 @@ import { s3Event } from "../../utils/multer/s3.events";
 import { successResponse } from "../../utils/response/success.response";
 import { IUserResponse, IProfileImageResponse } from "./user.entities";
 import { ILoginResponse } from "../auth/auth.entities";
-import { compare} from "bcrypt";
+import { compare } from "bcrypt";
 import { generateNumberOtp } from "../../utils/otp";
 import { emailEvent } from "../../utils/email/email.event";
-
+import {
+  HUserDocument,
+  IUser,
+  RoleEnum,
+  UserModel,
+  UserRepository,
+} from "../../DB";
 
 class UserService {
   private userModel = new UserRepository(UserModel);
@@ -269,7 +268,6 @@ class UserService {
   };
 
   updateBasicInfo = async (req: Request, res: Response): Promise<Response> => {
-
     const user = await this.userModel.findOneAndUpdate({
       filter: {
         id: req.user?._id,

@@ -75,6 +75,14 @@ export abstract class DatabaseRepository<TDocument> {
     update: UpdateQuery<TDocument>;
     options?: MongooseUpdateQueryOptions<TDocument> | null;
   }): Promise<UpdateWriteOpResult> {
+    if (Array.isArray(update)) {
+      update.push({
+        $set: {
+          __v: { $add: ["$__v", 1] },
+        },
+      });
+      return await this.model.updateOne(filter || {}, update, options);
+    }
     return await this.model.updateOne(
       filter,
       { ...update, $inc: { __v: 1 } },
@@ -87,9 +95,9 @@ export abstract class DatabaseRepository<TDocument> {
     select,
     options,
   }: {
-    filter: RootFilterQuery<TDocument>;
-    select?: ProjectionType<TDocument>;
-    options?: QueryOptions<TDocument> | null;
+    filter?: RootFilterQuery<TDocument>;
+    select?: ProjectionType<TDocument> | undefined;
+    options?: QueryOptions<TDocument> | undefined;
   }): Promise<HydratedDocument<TDocument>[] | [] | Lean<TDocument>[]> {
     const doc = this.model.find(filter || {}).select(select || "");
     if (options?.populate) {
@@ -105,6 +113,43 @@ export abstract class DatabaseRepository<TDocument> {
       doc.lean();
     }
     return await doc.exec();
+  }
+
+  async paginate({
+    filter = {},
+    select,
+    options = {},
+    page = "all",
+    size = 5,
+  }: {
+    filter: RootFilterQuery<TDocument>;
+    select?: ProjectionType<TDocument> | undefined;
+    options?: QueryOptions<TDocument> | undefined;
+    page?: number | "all";
+    size?: number;
+  }): Promise<HydratedDocument<TDocument>[] | [] | Lean<TDocument>[] | any> {
+    let docCount: number | undefined = undefined;
+    let pages: number | undefined = undefined;
+    if (page !== "all") {
+      page = Math.floor(page < 1 ? 1 : page);
+      options.limit = Math.floor(size < 1 || !size ? 5 : size);
+      options.skip = (page - 1) * options.limit;
+
+      docCount = await this.model.countDocuments(filter);
+      pages = Math.ceil(docCount / options.limit);
+    }
+    const result = await this.find({
+      filter,
+      select,
+      options,
+    });
+    return {
+      docCount,
+      limit: options.limit,
+      pages,
+      currentPage: page !== "all" ? page : undefined,
+      result,
+    };
   }
 
   async deleteOne({
@@ -130,7 +175,7 @@ export abstract class DatabaseRepository<TDocument> {
   }): Promise<DeleteResult> {
     return this.model.deleteMany(filter);
   }
-  
+
   async insertMany({
     data,
   }: {

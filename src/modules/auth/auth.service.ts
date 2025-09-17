@@ -8,7 +8,6 @@ import type {
   ISignupBodyInputsDTO,
   IVerifyForgotPasswordBodyInputsDTO,
 } from "./auth.dto";
-import { ProviderEnum, UserModel } from "../../DB/models/User.model";
 import {
   BadRequestException,
   ConflictException,
@@ -21,7 +20,7 @@ import { createLoginCredentials } from "../../utils/secuirty/token.secuirty";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { successResponse } from "../../utils/response/success.response";
 import { ILoginResponse } from "./auth.entities";
-import { UserRepository } from "../../DB/repository";
+import { ProviderEnum, UserModel, UserRepository } from "../../DB";
 // import { customAlphabet } from "nanoid";
 
 class AuthenticationService {

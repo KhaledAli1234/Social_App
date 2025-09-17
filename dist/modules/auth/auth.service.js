@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const User_model_1 = require("../../DB/models/User.model");
 const error_response_1 = require("../../utils/response/error.response");
 const hash_secuirty_1 = require("../../utils/secuirty/hash.secuirty");
 const email_event_1 = require("../../utils/email/email.event");
@@ -8,9 +7,9 @@ const otp_1 = require("../../utils/otp");
 const token_secuirty_1 = require("../../utils/secuirty/token.secuirty");
 const google_auth_library_1 = require("google-auth-library");
 const success_response_1 = require("../../utils/response/success.response");
-const repository_1 = require("../../DB/repository");
+const DB_1 = require("../../DB");
 class AuthenticationService {
-    userModel = new repository_1.UserRepository(User_model_1.UserModel);
+    userModel = new DB_1.UserRepository(DB_1.UserModel);
     constructor() { }
     verifyGoogleAccount = async (idToken) => {
         const client = new google_auth_library_1.OAuth2Client();
@@ -59,7 +58,7 @@ class AuthenticationService {
         const user = await this.userModel.findOne({
             filter: {
                 email,
-                provider: User_model_1.ProviderEnum.system,
+                provider: DB_1.ProviderEnum.system,
             },
         });
         if (!user) {
@@ -113,7 +112,7 @@ class AuthenticationService {
             filter: {
                 email,
                 confirmAt: { $exists: true },
-                provider: User_model_1.ProviderEnum.system,
+                provider: DB_1.ProviderEnum.system,
             },
         });
         if (!user) {
@@ -145,7 +144,7 @@ class AuthenticationService {
             filter: {
                 email,
                 resetPasswordOtp: { $exists: true },
-                provider: User_model_1.ProviderEnum.system,
+                provider: DB_1.ProviderEnum.system,
             },
         });
         if (!user) {
@@ -165,7 +164,7 @@ class AuthenticationService {
             filter: {
                 email,
                 resetPasswordOtp: { $exists: true },
-                provider: User_model_1.ProviderEnum.system,
+                provider: DB_1.ProviderEnum.system,
             },
         });
         if (!user) {
@@ -199,7 +198,7 @@ class AuthenticationService {
             },
         });
         if (user) {
-            if (user.provider === User_model_1.ProviderEnum.google) {
+            if (user.provider === DB_1.ProviderEnum.google) {
                 return this.loginWithGmail(req, res);
             }
             throw new error_response_1.ConflictException("Email already exists");
@@ -212,7 +211,7 @@ class AuthenticationService {
                     profileImage: picture,
                     email: email,
                     confirmAt: new Date(),
-                    provider: User_model_1.ProviderEnum.google,
+                    provider: DB_1.ProviderEnum.google,
                 },
             ],
         })) || [];
@@ -233,7 +232,7 @@ class AuthenticationService {
         const user = await this.userModel.findOne({
             filter: {
                 email,
-                provider: User_model_1.ProviderEnum.google,
+                provider: DB_1.ProviderEnum.google,
             },
         });
         if (!user) {

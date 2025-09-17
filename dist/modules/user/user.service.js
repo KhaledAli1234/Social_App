@@ -1,8 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const token_secuirty_1 = require("../../utils/secuirty/token.secuirty");
-const User_model_1 = require("../../DB/models/User.model");
-const user_repository_1 = require("../../DB/repository/user.repository");
 const s3_config_1 = require("../../utils/multer/s3.config");
 const cloud_multer_1 = require("../../utils/multer/cloud.multer");
 const error_response_1 = require("../../utils/response/error.response");
@@ -11,8 +9,9 @@ const success_response_1 = require("../../utils/response/success.response");
 const bcrypt_1 = require("bcrypt");
 const otp_1 = require("../../utils/otp");
 const email_event_1 = require("../../utils/email/email.event");
+const DB_1 = require("../../DB");
 class UserService {
-    userModel = new user_repository_1.UserRepository(User_model_1.UserModel);
+    userModel = new DB_1.UserRepository(DB_1.UserModel);
     constructor() { }
     profile = async (req, res) => {
         if (!req.user) {
@@ -114,7 +113,7 @@ class UserService {
     };
     freezeAccount = async (req, res) => {
         const { userId } = req.params || {};
-        if (userId && req.user?.role !== User_model_1.RoleEnum.admin) {
+        if (userId && req.user?.role !== DB_1.RoleEnum.admin) {
             throw new error_response_1.ForbiddenException("not authorized user");
         }
         const user = await this.userModel.updateOne({
