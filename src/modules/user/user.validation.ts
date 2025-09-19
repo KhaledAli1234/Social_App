@@ -2,6 +2,7 @@ import { z } from "zod";
 import { LogoutEnum } from "../../utils/secuirty/token.secuirty";
 import { Types } from "mongoose";
 import { generalFields } from "../../middleware/validation.middleware";
+import { RoleEnum } from "../../DB";
 
 export const logout = {
   body: z.strictObject({
@@ -55,6 +56,25 @@ export const updatePassword = {
       path: ["newPassword"],
       message: "New password must be different from old password",
     }),
+};
+
+export const sendFriendRequest = {
+  params: z.strictObject({
+    userId: generalFields.id,
+  })
+};
+
+export const acceptFriendRequest = {
+  params: z.strictObject({
+    requestId: generalFields.id,
+  })
+};
+
+export const changeRole = {
+  params: sendFriendRequest.params,
+  body: z.strictObject({
+    role: z.enum(RoleEnum),
+  }),
 };
 
 export const updateBasicInfo = {

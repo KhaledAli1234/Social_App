@@ -40,7 +40,7 @@ const commentSchema = new Schema<IComment>(
 
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     postId: { type: Schema.Types.ObjectId, ref: "Post", required: true },
-    commentId: { type: Schema.Types.ObjectId, ref: "Comment"},
+    commentId: { type: Schema.Types.ObjectId, ref: "Comment" },
 
     freezedAt: Date,
     freezedBy: { type: Schema.Types.ObjectId, ref: "User" },
@@ -51,6 +51,8 @@ const commentSchema = new Schema<IComment>(
   {
     timestamps: true,
     strictQuery: true,
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true },
   }
 );
 
@@ -64,7 +66,7 @@ commentSchema.pre(["findOneAndUpdate", "updateOne"], function (next) {
   next();
 });
 
-commentSchema.pre(["find", "findOne" , "countDocuments"], function (next) {
+commentSchema.pre(["find", "findOne", "countDocuments"], function (next) {
   const query = this.getQuery();
   if (query.paranoid === false) {
     this.setQuery({ ...query });
@@ -74,14 +76,12 @@ commentSchema.pre(["find", "findOne" , "countDocuments"], function (next) {
   next();
 });
 
-commentSchema.pre(["updateOne", "findOneAndUpdate"], function (next) {
-  const query = this.getQuery();
-  if (query.paranoid === false) {
-    this.setQuery({ ...query });
-  } else {
-    this.setQuery({ ...query, freezedAt: { $exists: false } });
-  }
-  next();
+commentSchema.virtual("reply", {
+  localField: "_id",
+  foreignField: "commentId",
+  ref: "Comment",
+  justOne: true,
 });
 
-export const CommentModel = models.Comment || model<IComment>("Comment", commentSchema);
+export const CommentModel =
+  models.Comment || model<IComment>("Comment", commentSchema);

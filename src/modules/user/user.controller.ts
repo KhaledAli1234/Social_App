@@ -14,6 +14,10 @@ router.delete("{/:userId}/freeze-account", authentication(),validation(validator
 router.delete("/:userId", authorization(endpoint.hardDelete),validation(validators.hardDelete), userService.hardDeleteAccount)
 router.patch("/:userId/restore-account", authorization(endpoint.restoreAccount),validation(validators.restoreAccount), userService.restoreAccount)
 router.get("/", authentication(), userService.profile);
+router.get("/dashboard", authorization(endpoint.dashboard), userService.dashboard);
+router.patch("/:userId/change-role",  authorization(endpoint.dashboard), validation(validators.changeRole), userService.changeRole);
+router.post("/:userId/send-friend-request",  authentication(), validation(validators.sendFriendRequest), userService.sendFriendRequest);
+router.patch("/accept-friend-request/:requestId",  authentication(), validation(validators.acceptFriendRequest), userService.acceptFriendRequest);
 router.patch("/profile-image", authentication(), userService.profileImage);
 router.patch("/profile-cover-image", authentication(), cloudFileUploud({validation:fileValidation.image , storageApproach :StorageEnum.disk}).array("images" , 2), userService.profileCoverImage);
 router.post("/refresh-token", authentication(TokenEnum.refresh), userService.refreshToken);

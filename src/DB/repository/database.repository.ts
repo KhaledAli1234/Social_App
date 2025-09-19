@@ -205,8 +205,8 @@ export abstract class DatabaseRepository<TDocument> {
     update,
     options = { new: true },
   }: {
-    filter?: RootFilterQuery<TDocument>;
-    update?: UpdateQuery<TDocument>;
+    filter: RootFilterQuery<TDocument>;
+    update: UpdateQuery<TDocument>;
     options?: QueryOptions<TDocument> | null;
   }): Promise<HydratedDocument<TDocument> | Lean<TDocument> | null> {
     return this.model.findOneAndUpdate(
