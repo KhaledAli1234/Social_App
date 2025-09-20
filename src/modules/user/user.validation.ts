@@ -61,13 +61,13 @@ export const updatePassword = {
 export const sendFriendRequest = {
   params: z.strictObject({
     userId: generalFields.id,
-  })
+  }),
 };
 
 export const acceptFriendRequest = {
   params: z.strictObject({
     requestId: generalFields.id,
-  })
+  }),
 };
 
 export const changeRole = {
@@ -100,4 +100,18 @@ export const confirmTwoStep = {
   body: z.strictObject({
     otp: generalFields.otp,
   }),
+};
+
+export const deleteFriendRequest = {
+  params: acceptFriendRequest.params,
+};
+
+export const unFriend = {
+  params: z.strictObject({
+    friendId: generalFields.id,
+  }),
+};
+
+export const blockUser = {
+  params: sendFriendRequest.params,
 };

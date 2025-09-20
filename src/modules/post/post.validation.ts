@@ -103,3 +103,15 @@ export const sendTagEmail = {
     removedTags: z.array(generalFields.id).min(1).max(10),
   }),
 };
+
+export const getPostById = {
+  params: updatePost.params,
+};
+
+export const freezePost = {
+  params: updatePost.params,
+};
+
+export const hardDeletePost = {
+  params: updatePost.params,
+};

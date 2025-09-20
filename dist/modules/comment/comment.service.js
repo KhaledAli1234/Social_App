@@ -108,5 +108,114 @@ class CommentService {
         }
         return (0, success_response_1.successResponse)({ res, statusCode: 201 });
     };
+    getCommentById = async (req, res) => {
+        const { commentId } = req.params;
+        const comment = await this.commentModel.findOne({
+            filter: { _id: commentId },
+        });
+        if (!comment) {
+            throw new error_response_1.NotFoundException("comment not found");
+        }
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "comment fetched successfully",
+            data: { comment },
+        });
+    };
+    getCommentWithReply = async (req, res) => {
+        const { commentId } = req.params;
+        const comment = await this.commentModel.findOne({
+            filter: { _id: commentId },
+            options: { populate: { path: "reply" } },
+        });
+        if (!comment) {
+            throw new error_response_1.NotFoundException("comment not found");
+        }
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "comment with reply fetched successfully",
+            data: { comment },
+        });
+    };
+    freezeComment = async (req, res) => {
+        const { commentId } = req.params;
+        const comment = await this.commentModel.findOneAndUpdate({
+            filter: {
+                _id: commentId,
+                freezedAt: { $exists: false },
+                $or: [
+                    { createdBy: req.user?._id },
+                    { ...(req.user?.role === DB_1.RoleEnum.admin ? {} : { _id: null }) },
+                ],
+            },
+            update: {
+                $set: {
+                    freezedAt: new Date(),
+                    freezedBy: req.user?._id,
+                },
+                $unset: {
+                    restoredAt: 1,
+                    restoredBy: 1,
+                },
+            },
+            options: { new: true },
+        });
+        if (!comment) {
+            throw new error_response_1.NotFoundException("comment not found or already freezed");
+        }
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "comment freezed successfully",
+        });
+    };
+    hardDeleteComment = async (req, res) => {
+        const { commentId } = req.params;
+        const comment = await this.commentModel.deleteOne({
+            filter: {
+                _id: commentId,
+                freezedAt: { $exists: true },
+                $or: [
+                    { createdBy: req.user?._id },
+                    { ...(req.user?.role === DB_1.RoleEnum.admin ? {} : { _id: null }) },
+                ],
+            },
+        });
+        if (!comment.deletedCount) {
+            throw new error_response_1.NotFoundException("comment not found or fail to delete");
+        }
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "comment deleted successfully",
+        });
+    };
+    updateComment = async (req, res) => {
+        const { commentId } = req.params;
+        const updateData = req.body;
+        const comment = await this.commentModel.findOneAndUpdate({
+            filter: {
+                _id: commentId,
+                freezedAt: { $exists: false },
+                $or: [
+                    { createdBy: req.user?._id },
+                    { ...(req.user?.role === DB_1.RoleEnum.admin ? {} : { _id: null }) },
+                ],
+            },
+            update: {
+                $set: {
+                    ...updateData,
+                    updatedAt: new Date(),
+                },
+            },
+            options: { new: true },
+        });
+        if (!comment) {
+            throw new error_response_1.NotFoundException("comment not found or not allowed to update");
+        }
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "comment updated successfully",
+            data: { comment },
+        });
+    };
 }
 exports.default = new CommentService();

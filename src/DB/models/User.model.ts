@@ -53,6 +53,7 @@ export interface IUser {
   restoredBy?: Types.ObjectId;
 
   friends?: Types.ObjectId[];
+  blockedUsers?: Types.ObjectId[];
 
   createdAt: Date;
   updatedAt?: Date;
@@ -104,6 +105,7 @@ const userSchema = new Schema<IUser>(
     restoredBy: { type: Schema.Types.ObjectId, ref: "User" },
 
     friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    blockedUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   {
     timestamps: true,

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendTagEmail = exports.likePost = exports.updatePost = exports.createPost = void 0;
+exports.hardDeletePost = exports.freezePost = exports.getPostById = exports.sendTagEmail = exports.likePost = exports.updatePost = exports.createPost = void 0;
 const zod_1 = require("zod");
 const Post_model_1 = require("../../DB/models/Post.model");
 const validation_middleware_1 = require("../../middleware/validation.middleware");
@@ -90,4 +90,13 @@ exports.sendTagEmail = {
         postId: validation_middleware_1.generalFields.id,
         removedTags: zod_1.z.array(validation_middleware_1.generalFields.id).min(1).max(10),
     }),
+};
+exports.getPostById = {
+    params: exports.updatePost.params,
+};
+exports.freezePost = {
+    params: exports.updatePost.params,
+};
+exports.hardDeletePost = {
+    params: exports.updatePost.params,
 };

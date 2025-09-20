@@ -388,5 +388,52 @@ class UserService {
         await user.save();
         return (0, success_response_1.successResponse)({ res, message: "Two-step verification enabled" });
     };
+    deleteFriendRequest = async (req, res) => {
+        const { requestId } = req.params;
+        const request = await this.friendRequestModel.findOneAndDelete({
+            filter: {
+                id: requestId,
+                createdBy: req.user?._id,
+            },
+        });
+        if (!request) {
+            throw new error_response_1.NotFoundException("Friend request not found or not yours");
+        }
+        return (0, success_response_1.successResponse)({ res, message: "Friend request deleted" });
+    };
+    unFriend = async (req, res) => {
+        const { friendId } = req.params;
+        await this.userModel.updateOne({
+            filter: { _id: req.user?._id },
+            update: { $pull: { friends: friendId } },
+        });
+        await this.userModel.updateOne({
+            filter: { _id: friendId },
+            update: { $pull: { friends: req.user?._id } },
+        });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "Unfriended successfully",
+        });
+    };
+    blockUser = async (req, res) => {
+        const { userId } = req.params;
+        await this.userModel.updateOne({
+            filter: { _id: req.user?._id },
+            update: { $pull: { friends: userId } },
+        });
+        await this.userModel.updateOne({
+            filter: { _id: userId },
+            update: { $pull: { friends: req.user?._id } },
+        });
+        await this.userModel.updateOne({
+            filter: { _id: req.user?._id },
+            update: { $addToSet: { blockedUsers: userId } },
+        });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "User blocked successfully",
+        });
+    };
 }
 exports.default = new UserService();

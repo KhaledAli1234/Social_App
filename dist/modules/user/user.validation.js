@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.confirmTwoStep = exports.confirmEmail = exports.updateEmail = exports.updateBasicInfo = exports.changeRole = exports.acceptFriendRequest = exports.sendFriendRequest = exports.updatePassword = exports.hardDelete = exports.restoreAccount = exports.freezeAccount = exports.logout = void 0;
+exports.blockUser = exports.unFriend = exports.deleteFriendRequest = exports.confirmTwoStep = exports.confirmEmail = exports.updateEmail = exports.updateBasicInfo = exports.changeRole = exports.acceptFriendRequest = exports.sendFriendRequest = exports.updatePassword = exports.hardDelete = exports.restoreAccount = exports.freezeAccount = exports.logout = void 0;
 const zod_1 = require("zod");
 const token_secuirty_1 = require("../../utils/secuirty/token.secuirty");
 const mongoose_1 = require("mongoose");
@@ -52,12 +52,12 @@ exports.updatePassword = {
 exports.sendFriendRequest = {
     params: zod_1.z.strictObject({
         userId: validation_middleware_1.generalFields.id,
-    })
+    }),
 };
 exports.acceptFriendRequest = {
     params: zod_1.z.strictObject({
         requestId: validation_middleware_1.generalFields.id,
-    })
+    }),
 };
 exports.changeRole = {
     params: exports.sendFriendRequest.params,
@@ -85,4 +85,15 @@ exports.confirmTwoStep = {
     body: zod_1.z.strictObject({
         otp: validation_middleware_1.generalFields.otp,
     }),
+};
+exports.deleteFriendRequest = {
+    params: exports.acceptFriendRequest.params,
+};
+exports.unFriend = {
+    params: zod_1.z.strictObject({
+        friendId: validation_middleware_1.generalFields.id,
+    }),
+};
+exports.blockUser = {
+    params: exports.sendFriendRequest.params,
 };

@@ -27,6 +27,7 @@ exports.postAvailability = postAvailability;
 class PostService {
     postModel = new DB_1.PostRepository(DB_1.PostModel);
     userModel = new DB_1.UserRepository(DB_1.UserModel);
+    commentModel = new DB_1.CommentRepository(DB_1.CommentModel);
     constructor() { }
     createPost = async (req, res) => {
         if (req.body.tags?.length &&
@@ -215,6 +216,63 @@ class PostService {
         return (0, success_response_1.successResponse)({
             res,
             message: "Tag emails sent successfully",
+        });
+    };
+    getPostById = async (req, res) => {
+        const { postId } = req.params;
+        const post = await this.postModel.findOne({
+            filter: { _id: postId },
+            options: { populate: [{ path: "comments" }] },
+        });
+        if (!post) {
+            throw new error_response_1.NotFoundException("post not found");
+        }
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "post fetched successfully",
+            data: { post },
+        });
+    };
+    freezePost = async (req, res) => {
+        const { postId } = req.params;
+        const post = await this.postModel.updateOne({
+            filter: {
+                _id: postId,
+                freezedAt: { $exists: false },
+            },
+            update: {
+                freezedAt: new Date(),
+                freezedBy: req.user?._id,
+                $unset: {
+                    restoredAt: 1,
+                    restoredBy: 1,
+                },
+            },
+        });
+        if (!post.matchedCount) {
+            throw new error_response_1.NotFoundException("post not found or already freezed");
+        }
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "post freezed successfully",
+        });
+    };
+    hardDeletePost = async (req, res) => {
+        const { postId } = req.params;
+        const post = await this.postModel.deleteOne({
+            filter: {
+                _id: postId,
+                freezedAt: { $exists: true },
+            },
+        });
+        if (!post.deletedCount) {
+            throw new error_response_1.NotFoundException("post not found or fail to hard delete");
+        }
+        await this.commentModel.deleteMany({ filter: { postId } });
+        await (0, s3_config_1.deleteFolderByPrefix)({ path: `posts/${postId}` });
+        return (0, success_response_1.successResponse)({
+            res,
+            message: "post deleted successfully",
         });
     };
 }

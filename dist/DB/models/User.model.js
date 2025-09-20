@@ -56,6 +56,7 @@ const userSchema = new mongoose_1.Schema({
     restoredAt: Date,
     restoredBy: { type: mongoose_1.Schema.Types.ObjectId, ref: "User" },
     friends: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
+    blockedUsers: [{ type: mongoose_1.Schema.Types.ObjectId, ref: "User" }],
 }, {
     timestamps: true,
     strictQuery: true,

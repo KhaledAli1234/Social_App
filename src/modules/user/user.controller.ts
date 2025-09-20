@@ -28,5 +28,7 @@ router.post("/update-email/request", authentication(), validation(validators.upd
 router.post("/update-email/confirm", authentication(), validation(validators.confirmEmail), userService.confirmUpdateEmail);
 router.post("/enable", authentication(), userService.enableTwoStep);
 router.post("/confirm", authentication(), validation(validators.confirmTwoStep), userService.confirmEnableTwoStep);
-
+router.delete("/requests/:requestId", authentication(), validation(validators.deleteFriendRequest), userService.deleteFriendRequest);
+router.patch("/unfriend/:friendId", authentication(), validation(validators.unFriend), userService.unFriend);
+router.patch("/block/:userId", authentication(), validation(validators.blockUser), userService.blockUser);
 export default router;

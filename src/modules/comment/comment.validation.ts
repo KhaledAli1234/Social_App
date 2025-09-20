@@ -39,7 +39,32 @@ export const createComment = {
 export const replyOnComment = {
   params: createComment.params.extend({
     commentId: generalFields.id,
+    postId: generalFields.id,
   }),
 
+  body: createComment.body,
+};
+
+export const getCommentById = {
+  params: z.strictObject({
+    commentId: generalFields.id,
+    postId: generalFields.id,
+  }),
+};
+
+export const getCommentWithReply = {
+  params: getCommentById.params,
+};
+
+export const freezeComment = {
+  params: getCommentById.params,
+};
+
+export const hardDeleteComment = {
+  params: getCommentById.params,
+};
+
+export const updateComment = {
+  params: getCommentById.params,
   body: createComment.body,
 };

@@ -72,7 +72,7 @@ class UserService {
     return successResponse<IUserResponse>({
       res,
       message: "Profile fetched",
-      data: { user:profile },
+      data: { user: profile },
     });
   };
 
@@ -502,6 +502,68 @@ class UserService {
     await user.save();
 
     return successResponse({ res, message: "Two-step verification enabled" });
+  };
+
+  deleteFriendRequest = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const { requestId } = req.params;
+
+    const request = await this.friendRequestModel.findOneAndDelete({
+      filter: {
+        id: requestId,
+        createdBy: req.user?._id,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundException("Friend request not found or not yours");
+    }
+    return successResponse({ res, message: "Friend request deleted" });
+  };
+
+  unFriend = async (req: Request, res: Response): Promise<Response> => {
+    const { friendId } = req.params as unknown as { friendId: Types.ObjectId };
+
+    await this.userModel.updateOne({
+      filter: { _id: req.user?._id },
+      update: { $pull: { friends: friendId } },
+    });
+
+    await this.userModel.updateOne({
+      filter: { _id: friendId },
+      update: { $pull: { friends: req.user?._id } },
+    });
+
+    return successResponse({
+      res,
+      message: "Unfriended successfully",
+    });
+  };
+
+  blockUser = async (req: Request, res: Response): Promise<Response> => {
+    const { userId } = req.params as unknown as { userId: Types.ObjectId };
+
+    await this.userModel.updateOne({
+      filter: { _id: req.user?._id },
+      update: { $pull: { friends: userId } },
+    });
+
+    await this.userModel.updateOne({
+      filter: { _id: userId },
+      update: { $pull: { friends: req.user?._id } },
+    });
+
+    await this.userModel.updateOne({
+      filter: { _id: req.user?._id },
+      update: { $addToSet: { blockedUsers: userId } },
+    });
+
+    return successResponse({
+      res,
+      message: "User blocked successfully",
+    });
   };
 }
 

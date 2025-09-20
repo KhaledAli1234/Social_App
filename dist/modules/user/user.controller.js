@@ -63,4 +63,7 @@ router.post("/update-email/request", (0, authentication_middleware_1.authenticat
 router.post("/update-email/confirm", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.confirmEmail), user_service_1.default.confirmUpdateEmail);
 router.post("/enable", (0, authentication_middleware_1.authentication)(), user_service_1.default.enableTwoStep);
 router.post("/confirm", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.confirmTwoStep), user_service_1.default.confirmEnableTwoStep);
+router.delete("/requests/:requestId", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.deleteFriendRequest), user_service_1.default.deleteFriendRequest);
+router.patch("/unfriend/:friendId", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.unFriend), user_service_1.default.unFriend);
+router.patch("/block/:userId", (0, authentication_middleware_1.authentication)(), (0, validation_middleware_1.validation)(validators.blockUser), user_service_1.default.blockUser);
 exports.default = router;

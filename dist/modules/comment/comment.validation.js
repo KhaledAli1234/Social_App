@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.replyOnComment = exports.createComment = void 0;
+exports.updateComment = exports.hardDeleteComment = exports.freezeComment = exports.getCommentWithReply = exports.getCommentById = exports.replyOnComment = exports.createComment = void 0;
 const zod_1 = require("zod");
 const validation_middleware_1 = require("../../middleware/validation.middleware");
 const cloud_multer_1 = require("../../utils/multer/cloud.multer");
@@ -38,6 +38,26 @@ exports.createComment = {
 exports.replyOnComment = {
     params: exports.createComment.params.extend({
         commentId: validation_middleware_1.generalFields.id,
+        postId: validation_middleware_1.generalFields.id,
     }),
+    body: exports.createComment.body,
+};
+exports.getCommentById = {
+    params: zod_1.z.strictObject({
+        commentId: validation_middleware_1.generalFields.id,
+        postId: validation_middleware_1.generalFields.id,
+    }),
+};
+exports.getCommentWithReply = {
+    params: exports.getCommentById.params,
+};
+exports.freezeComment = {
+    params: exports.getCommentById.params,
+};
+exports.hardDeleteComment = {
+    params: exports.getCommentById.params,
+};
+exports.updateComment = {
+    params: exports.getCommentById.params,
     body: exports.createComment.body,
 };

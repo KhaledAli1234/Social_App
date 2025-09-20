@@ -5,17 +5,24 @@ import {
   NotFoundException,
 } from "../../utils/response/error.response";
 import { v4 as uuid } from "uuid";
-import { deleteFiles, uploadFiles } from "../../utils/multer/s3.config";
+import {
+  deleteFiles,
+  deleteFolderByPrefix,
+  uploadFiles,
+} from "../../utils/multer/s3.config";
 import { ILikePostQueryInputsDTO } from "./post.dto";
 import { Types, UpdateQuery } from "mongoose";
 import { emailEvent } from "../../utils/email/email.event";
 import { generateNumberOtp } from "../../utils/otp";
 import {
   AvailabilityEnum,
+  CommentModel,
+  CommentRepository,
   HPostDocument,
   LikeActionEnum,
   PostModel,
   PostRepository,
+  RoleEnum,
   UserModel,
   UserRepository,
 } from "../../DB";
@@ -38,6 +45,7 @@ export const postAvailability = (req: Request) => {
 class PostService {
   private postModel = new PostRepository(PostModel);
   private userModel = new UserRepository(UserModel);
+  private commentModel = new CommentRepository(CommentModel);
   constructor() {}
 
   createPost = async (req: Request, res: Response): Promise<Response> => {
@@ -245,6 +253,72 @@ class PostService {
     return successResponse({
       res,
       message: "Tag emails sent successfully",
+    });
+  };
+  getPostById = async (req: Request, res: Response): Promise<Response> => {
+    const { postId } = req.params as unknown as { postId: Types.ObjectId };
+
+    const post = await this.postModel.findOne({
+      filter: { _id: postId },
+      options: { populate: [{ path: "comments" }] },
+    });
+
+    if (!post) {
+      throw new NotFoundException("post not found");
+    }
+
+    return successResponse({
+      res,
+      message: "post fetched successfully",
+      data: { post },
+    });
+  };
+  freezePost = async (req: Request, res: Response): Promise<Response> => {
+    const { postId } = req.params as unknown as { postId: Types.ObjectId };
+
+    const post = await this.postModel.updateOne({
+      filter: {
+        _id: postId,
+        freezedAt: { $exists: false },
+      },
+      update: {
+        freezedAt: new Date(),
+        freezedBy: req.user?._id,
+        $unset: {
+          restoredAt: 1,
+          restoredBy: 1,
+        },
+      },
+    });
+
+    if (!post.matchedCount) {
+      throw new NotFoundException("post not found or already freezed");
+    }
+
+    return successResponse({
+      res,
+      message: "post freezed successfully",
+    });
+  };
+  hardDeletePost = async (req: Request, res: Response): Promise<Response> => {
+    const { postId } = req.params as unknown as { postId: Types.ObjectId };
+
+    const post = await this.postModel.deleteOne({
+      filter: {
+        _id: postId,
+        freezedAt: { $exists: true },
+      },
+    });
+
+    if (!post.deletedCount) {
+      throw new NotFoundException("post not found or fail to hard delete");
+    }
+    await this.commentModel.deleteMany({ filter: { postId } });
+    await deleteFolderByPrefix({ path: `posts/${postId}` });
+
+    return successResponse({
+      res,
+      message: "post deleted successfully",
     });
   };
 }

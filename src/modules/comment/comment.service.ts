@@ -7,6 +7,7 @@ import {
   HPostDocument,
   PostModel,
   PostRepository,
+  RoleEnum,
   UserModel,
   UserRepository,
 } from "../../DB";
@@ -136,6 +137,146 @@ class CommentService {
       throw new BadRequestException("fail to create this reply comment");
     }
     return successResponse({ res, statusCode: 201 });
+  };
+  getCommentById = async (req: Request, res: Response): Promise<Response> => {
+    const { commentId } = req.params as unknown as {
+      commentId: Types.ObjectId;
+    };
+
+    const comment = await this.commentModel.findOne({
+      filter: { _id: commentId },
+    });
+
+    if (!comment) {
+      throw new NotFoundException("comment not found");
+    }
+
+    return successResponse({
+      res,
+      message: "comment fetched successfully",
+      data: { comment },
+    });
+  };
+  getCommentWithReply = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const { commentId } = req.params as unknown as {
+      commentId: Types.ObjectId;
+    };
+
+    const comment = await this.commentModel.findOne({
+      filter: { _id: commentId },
+      options: { populate: { path: "reply" } },
+    });
+
+    if (!comment) {
+      throw new NotFoundException("comment not found");
+    }
+
+    return successResponse({
+      res,
+      message: "comment with reply fetched successfully",
+      data: { comment },
+    });
+  };
+  freezeComment = async (req: Request, res: Response): Promise<Response> => {
+    const { commentId } = req.params as unknown as {
+      commentId: Types.ObjectId;
+    };
+
+    const comment = await this.commentModel.findOneAndUpdate({
+      filter: {
+        _id: commentId,
+        freezedAt: { $exists: false },
+        $or: [
+          { createdBy: req.user?._id },
+          { ...(req.user?.role === RoleEnum.admin ? {} : { _id: null }) },
+        ],
+      },
+      update: {
+        $set: {
+          freezedAt: new Date(),
+          freezedBy: req.user?._id,
+        },
+        $unset: {
+          restoredAt: 1,
+          restoredBy: 1,
+        },
+      },
+      options: { new: true },
+    });
+
+    if (!comment) {
+      throw new NotFoundException("comment not found or already freezed");
+    }
+
+    return successResponse({
+      res,
+      message: "comment freezed successfully",
+    });
+  };
+  hardDeleteComment = async (
+    req: Request,
+    res: Response
+  ): Promise<Response> => {
+    const { commentId } = req.params as unknown as {
+      commentId: Types.ObjectId;
+    };
+
+    const comment = await this.commentModel.deleteOne({
+      filter: {
+        _id: commentId,
+        freezedAt: { $exists: true },
+        $or: [
+          { createdBy: req.user?._id },
+          { ...(req.user?.role === RoleEnum.admin ? {} : { _id: null }) },
+        ],
+      },
+    });
+
+    if (!comment.deletedCount) {
+      throw new NotFoundException("comment not found or fail to delete");
+    }
+
+    return successResponse({
+      res,
+      message: "comment deleted successfully",
+    });
+  };
+  updateComment = async (req: Request, res: Response): Promise<Response> => {
+    const { commentId } = req.params as unknown as {
+      commentId: Types.ObjectId;
+    };
+    const updateData = req.body;
+
+    const comment = await this.commentModel.findOneAndUpdate({
+      filter: {
+        _id: commentId,
+        freezedAt: { $exists: false },
+        $or: [
+          { createdBy: req.user?._id },
+          { ...(req.user?.role === RoleEnum.admin ? {} : { _id: null }) },
+        ],
+      },
+      update: {
+        $set: {
+          ...updateData,
+          updatedAt: new Date(),
+        },
+      },
+      options: { new: true },
+    });
+
+    if (!comment) {
+      throw new NotFoundException("comment not found or not allowed to update");
+    }
+
+    return successResponse({
+      res,
+      message: "comment updated successfully",
+      data: { comment },
+    });
   };
 }
 

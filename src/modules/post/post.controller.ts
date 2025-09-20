@@ -11,9 +11,16 @@ import { commentRouter } from "../comment";
 
 const router = Router();
 
-router.use("/:postId/comment" , commentRouter)
+router.use("/:postId/comment", commentRouter);
 
 router.get("/", authentication(), postService.postList);
+
+router.get(
+  "/:postId",
+  authentication(),
+  validation(validators.getPostById),
+  postService.getPostById
+);
 
 router.post(
   "/",
@@ -36,6 +43,20 @@ router.patch(
   authentication(),
   validation(validators.likePost),
   postService.likePost
+);
+
+router.patch(
+  "/:postId/freeze",
+  authentication(),
+  validation(validators.freezePost),
+  postService.freezePost
+);
+
+router.delete(
+  "/:postId/hard-delete",
+  authentication(),
+  validation(validators.hardDeletePost),
+  postService.hardDeletePost
 );
 
 router.post(
