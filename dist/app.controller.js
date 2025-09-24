@@ -69,8 +69,9 @@ const bootstrap = async () => {
         res.status(404).json({ message: "invalid application routing ❌" });
     });
     app.use(error_response_1.globalErrorHandling);
-    app.listen(port, () => {
+    const httpServer = app.listen(port, () => {
         console.log(`server is running on port ${port} 🚀`);
     });
+    (0, modules_1.initIo)(httpServer);
 };
 exports.default = bootstrap;

@@ -3,9 +3,7 @@ import { config } from "dotenv";
 config({ path: resolve("./config/.env.development") });
 import type { Request, Response, Express } from "express";
 import express from "express";
-
-import { authRouter, postRouter, userRouter } from "./modules";
-
+import { authRouter, initIo, postRouter, userRouter } from "./modules";
 import cors from "cors";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
@@ -109,9 +107,11 @@ const bootstrap = async (): Promise<void> => {
 
   app.use(globalErrorHandling);
 
-  app.listen(port, () => {
+  const httpServer = app.listen(port, () => {
     console.log(`server is running on port ${port} 🚀`);
   });
+
+  initIo(httpServer);
 };
 
 export default bootstrap;
