@@ -47,16 +47,6 @@ commentSchema.pre(["find", "findOne", "countDocuments"], function (next) {
     }
     next();
 });
-commentSchema.pre(["updateOne", "findOneAndUpdate"], function (next) {
-    const query = this.getQuery();
-    if (query.paranoid === false) {
-        this.setQuery({ ...query });
-    }
-    else {
-        this.setQuery({ ...query, freezedAt: { $exists: false } });
-    }
-    next();
-});
 commentSchema.virtual("reply", {
     localField: "_id",
     foreignField: "commentId",

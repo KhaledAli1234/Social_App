@@ -9,6 +9,7 @@ const mongoose_1 = require("mongoose");
 const email_event_1 = require("../../utils/email/email.event");
 const otp_1 = require("../../utils/otp");
 const DB_1 = require("../../DB");
+const gateway_1 = require("../gateway");
 const postAvailability = (req) => {
     return [
         { availability: DB_1.AvailabilityEnum.public },
@@ -157,6 +158,11 @@ class PostService {
         });
         if (!post) {
             throw new error_response_1.NotFoundException("invalid postId or post not exist");
+        }
+        if (action !== DB_1.LikeActionEnum.unlike) {
+            (0, gateway_1.getIo)()
+                .to(gateway_1.connectedSockets.get(post.createdBy.toString()))
+                .emit("likePost", { postId, userId: req.user?._id });
         }
         return (0, success_response_1.successResponse)({ res });
     };

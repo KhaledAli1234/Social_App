@@ -26,6 +26,7 @@ import {
   UserModel,
   UserRepository,
 } from "../../DB";
+import { connectedSockets, getIo } from "../gateway";
 
 export const postAvailability = (req: Request) => {
   return [
@@ -189,6 +190,11 @@ class PostService {
 
     if (!post) {
       throw new NotFoundException("invalid postId or post not exist");
+    }
+    if (action !== LikeActionEnum.unlike) {
+      getIo()
+        .to(connectedSockets.get(post.createdBy.toString()) as string[])
+        .emit("likePost", { postId, userId: req.user?._id });
     }
 
     return successResponse({ res });

@@ -20,26 +20,37 @@ const initIo = async (httpServer) => {
                 authorization: socket.handshake?.auth?.authorization,
                 tokenType: token_secuirty_1.TokenEnum.access,
             });
+            const userTapes = exports.connectedSockets.get(user._id.toString()) || [];
+            userTapes.push(socket.id);
             socket.credentials = { decoded, user };
-            exports.connectedSockets.set(user._id.toString(), socket.id);
+            exports.connectedSockets.set(user._id.toString(), userTapes);
             next();
         }
         catch (error) {
             next(error);
         }
     });
-    function disconnection(socket) {
+    function disconnection(socket, io) {
         return socket.on("disconnect", () => {
-            const removedUserId = socket.credentials?.user?._id?.toString();
-            exports.connectedSockets.delete(removedUserId);
-            exports.io?.emit("offlineUser", { removedUserId });
+            const userId = socket.credentials?.user?._id?.toString();
+            let remainingTabs = exports.connectedSockets.get(userId)?.filter((tab) => {
+                return tab !== socket.id;
+            }) || [];
+            if (remainingTabs.length) {
+                exports.connectedSockets.set(userId, remainingTabs);
+            }
+            else {
+                exports.connectedSockets.delete(userId);
+                (0, exports.getIo)().emit("offline_User", { userId });
+            }
+            console.log(`logout: ${socket.id}`);
         });
     }
     exports.io.on("connection", (socket) => {
         try {
             console.log(socket.id);
             chatGateway.register(socket, (0, exports.getIo)());
-            disconnection(socket);
+            disconnection(socket, (0, exports.getIo)());
         }
         catch (error) {
             console.log("fail");

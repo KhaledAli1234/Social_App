@@ -34,6 +34,8 @@ import { compare } from "bcrypt";
 import { generateNumberOtp } from "../../utils/otp";
 import { emailEvent } from "../../utils/email/email.event";
 import {
+  ChatModel,
+  ChatRepository,
   FriendRequestModel,
   FriendRequestRepository,
   HUserDocument,
@@ -49,13 +51,15 @@ class UserService {
   private userModel = new UserRepository(UserModel);
   private postModel = new PostRepository(PostModel);
   private friendRequestModel = new FriendRequestRepository(FriendRequestModel);
+  private chatModel = new ChatRepository(ChatModel);
+
   constructor() {}
 
   profile = async (req: Request, res: Response): Promise<Response> => {
     if (!req.user) {
       throw new UnauthorizedException("missing user details");
     }
-    const profile = await this.userModel.findById({
+    const user = await this.userModel.findById({
       id: req.user?._id as Types.ObjectId,
       options: {
         populate: [
@@ -66,13 +70,19 @@ class UserService {
         ],
       },
     });
-    if (!profile) {
+    if (!user) {
       throw new NotFoundException("fail to find user profile");
     }
+    const groups = await this.chatModel.find({
+      filter: {
+        participants: { $in: req.user?._id as Types.ObjectId },
+        group: { $exists: true },
+      },
+    });
     return successResponse<IUserResponse>({
       res,
       message: "Profile fetched",
-      data: { user: profile },
+      data: { user, groups },
     });
   };
 

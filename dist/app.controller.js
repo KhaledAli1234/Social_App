@@ -16,6 +16,7 @@ const connection_db_1 = __importDefault(require("./DB/connection.db"));
 const s3_config_1 = require("./utils/multer/s3.config");
 const node_util_1 = require("node:util");
 const node_stream_1 = require("node:stream");
+const chat_1 = require("./modules/chat");
 const createS3WriteStreamPipe = (0, node_util_1.promisify)(node_stream_1.pipeline);
 const bootstrap = async () => {
     const app = (0, express_1.default)();
@@ -34,6 +35,7 @@ const bootstrap = async () => {
     app.use("/auth", modules_1.authRouter);
     app.use("/user", modules_1.userRouter);
     app.use("/post", modules_1.postRouter);
+    app.use("/chat", chat_1.chatRouter);
     app.get("/upload/*path", async (req, res) => {
         const { downloadName, download = "false" } = req.query;
         const { path } = req.params;

@@ -6,9 +6,12 @@ import * as validators from "./user.validation";
 import { TokenEnum } from "../../utils/secuirty/token.secuirty";
 import { cloudFileUploud, fileValidation, StorageEnum } from "../../utils/multer/cloud.multer";
 import { endpoint } from "./user.authorization";
-
+import { chatRouter } from "../chat";
 
 const router = Router();
+
+router.use("/:userId/chat" , chatRouter);
+
 
 router.delete("{/:userId}/freeze-account", authentication(),validation(validators.freezeAccount), userService.freezeAccount)
 router.delete("/:userId", authorization(endpoint.hardDelete),validation(validators.hardDelete), userService.hardDeleteAccount)

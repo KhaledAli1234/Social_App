@@ -15,6 +15,7 @@ import connectDB from "./DB/connection.db";
 import { createGetPresignedLink, getFile } from "./utils/multer/s3.config";
 import { promisify } from "node:util";
 import { pipeline } from "node:stream";
+import { chatRouter } from "./modules/chat";
 
 const createS3WriteStreamPipe = promisify(pipeline);
 
@@ -39,6 +40,7 @@ const bootstrap = async (): Promise<void> => {
   app.use("/auth", authRouter);
   app.use("/user", userRouter);
   app.use("/post", postRouter);
+  app.use("/chat", chatRouter);
 
   app.get(
     "/upload/*path",

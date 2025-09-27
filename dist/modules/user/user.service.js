@@ -14,12 +14,13 @@ class UserService {
     userModel = new DB_1.UserRepository(DB_1.UserModel);
     postModel = new DB_1.PostRepository(DB_1.PostModel);
     friendRequestModel = new DB_1.FriendRequestRepository(DB_1.FriendRequestModel);
+    chatModel = new DB_1.ChatRepository(DB_1.ChatModel);
     constructor() { }
     profile = async (req, res) => {
         if (!req.user) {
             throw new error_response_1.UnauthorizedException("missing user details");
         }
-        const profile = await this.userModel.findById({
+        const user = await this.userModel.findById({
             id: req.user?._id,
             options: {
                 populate: [
@@ -30,13 +31,19 @@ class UserService {
                 ],
             },
         });
-        if (!profile) {
+        if (!user) {
             throw new error_response_1.NotFoundException("fail to find user profile");
         }
+        const groups = await this.chatModel.find({
+            filter: {
+                participants: { $in: req.user?._id },
+                group: { $exists: true },
+            },
+        });
         return (0, success_response_1.successResponse)({
             res,
             message: "Profile fetched",
-            data: { user: profile },
+            data: { user, groups },
         });
     };
     dashboard = async (req, res) => {
