@@ -1,5 +1,4 @@
 import {
-  Cursor,
   HydratedDocument,
   Model,
   PopulateOptions,

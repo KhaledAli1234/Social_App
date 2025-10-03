@@ -3,10 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generalFields = exports.validation = void 0;
+exports.graphValidation = exports.generalFields = exports.validation = void 0;
 const zod_1 = __importDefault(require("zod"));
 const error_response_1 = require("../utils/response/error.response");
 const mongoose_1 = require("mongoose");
+const graphql_1 = require("graphql");
 const validation = (schema) => {
     return (req, res, next) => {
         const validationError = [];
@@ -71,3 +72,21 @@ exports.generalFields = {
         return mongoose_1.Types.ObjectId.isValid(data);
     }, { error: "invalid objectId format" }),
 };
+const graphValidation = async (schema, args) => {
+    const validationResult = await schema.safeParseAsync(args);
+    if (!validationResult.success) {
+        const errors = validationResult.error;
+        throw new graphql_1.GraphQLError("validation Error", {
+            extensions: {
+                statusCode: 400,
+                issues: {
+                    key: "args",
+                    issues: errors.issues.map((issue) => {
+                        return { message: issue.message, path: issue.path };
+                    }),
+                },
+            },
+        });
+    }
+};
+exports.graphValidation = graphValidation;

@@ -38,6 +38,7 @@ import {
   ChatRepository,
   FriendRequestModel,
   FriendRequestRepository,
+  GenderEnum,
   HUserDocument,
   IUser,
   PostModel,
@@ -46,8 +47,52 @@ import {
   UserModel,
   UserRepository,
 } from "../../DB";
+import { GraphQLError } from "graphql";
 
-class UserService {
+export interface IUsers {
+  id: number;
+  name: string;
+  email: string;
+  gender: GenderEnum;
+  password: string;
+  followers: number[];
+}
+
+let users: IUsers[] = [
+  {
+    id: 1,
+    name: "khaled",
+    email: "khaled@gmail.com",
+    gender: GenderEnum.male,
+    password: "0000",
+    followers: [],
+  },
+  {
+    id: 2,
+    name: "mohamed",
+    email: "mohamed@gmail.com",
+    gender: GenderEnum.male,
+    password: "0000",
+    followers: [],
+  },
+  {
+    id: 3,
+    name: "menna",
+    email: "menna@gmail.com",
+    gender: GenderEnum.female,
+    password: "0000",
+    followers: [],
+  },
+  {
+    id: 4,
+    name: "mazen",
+    email: "mazen@gmail.com",
+    gender: GenderEnum.male,
+    password: "0000",
+    followers: [],
+  },
+];
+export class UserService {
   private userModel = new UserRepository(UserModel);
   private postModel = new PostRepository(PostModel);
   private friendRequestModel = new FriendRequestRepository(FriendRequestModel);
@@ -574,6 +619,46 @@ class UserService {
       res,
       message: "User blocked successfully",
     });
+  };
+
+  //GRAPHQL
+
+  welcome = (user: HUserDocument): string => {
+    return "Hello GraphQl";
+  };
+
+  allUsers = async (
+    args: { gender: GenderEnum },
+    authUser: HUserDocument
+  ): Promise<HUserDocument[]> => {
+    return await this.userModel.find({
+      filter: {
+        _id: { $ne: authUser._id },
+        gender: args.gender,
+      },
+    });
+  };
+
+  search = (args: {
+    email: string;
+  }): { message: string; statusCode: number; data: IUsers } => {
+    const user = users.find((ele) => ele.email === args.email);
+    if (!user) {
+      throw new GraphQLError("fail to find matching result", {
+        extensions: { statusCode: 404 },
+      });
+    }
+    return { message: "Done", statusCode: 200, data: user };
+  };
+
+  addFollower = (args: { friendId: number; myId: number }): IUsers[] => {
+    users = users.map((ele: IUsers): IUsers => {
+      if (ele.id === args.friendId) {
+        ele.followers.push(args.myId);
+      }
+      return ele;
+    });
+    return users;
   };
 }
 

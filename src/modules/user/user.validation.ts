@@ -4,6 +4,10 @@ import { Types } from "mongoose";
 import { generalFields } from "../../middleware/validation.middleware";
 import { RoleEnum } from "../../DB";
 
+export const welcome = z.strictObject({
+  name: z.string().min(2),
+});
+
 export const logout = {
   body: z.strictObject({
     flag: z.enum(LogoutEnum).default(LogoutEnum.only),

@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import z, { type ZodError, type ZodType } from "zod";
 import { BadRequestException } from "../utils/response/error.response";
 import { Types } from "mongoose";
+import { GraphQLError } from "graphql";
 
 type KeyReqType = keyof Request;
 type SchemaType = Partial<Record<KeyReqType, ZodType>>;
@@ -94,4 +95,22 @@ export const generalFields = {
     },
     { error: "invalid objectId format" }
   ),
+};
+
+export const graphValidation = async <T = any>(schema: ZodType, args: T) => {
+  const validationResult = await schema.safeParseAsync(args);
+  if (!validationResult.success) {
+    const errors = validationResult.error as ZodError;
+    throw new GraphQLError("validation Error", {
+      extensions: {
+        statusCode: 400,
+        issues: {
+          key: "args",
+          issues: errors.issues.map((issue) => {
+            return { message: issue.message, path: issue.path };
+          }),
+        },
+      },
+    });
+  }
 };

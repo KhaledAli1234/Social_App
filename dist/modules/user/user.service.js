@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.UserService = void 0;
 const token_secuirty_1 = require("../../utils/secuirty/token.secuirty");
 const s3_config_1 = require("../../utils/multer/s3.config");
 const cloud_multer_1 = require("../../utils/multer/cloud.multer");
@@ -10,6 +11,41 @@ const bcrypt_1 = require("bcrypt");
 const otp_1 = require("../../utils/otp");
 const email_event_1 = require("../../utils/email/email.event");
 const DB_1 = require("../../DB");
+const graphql_1 = require("graphql");
+let users = [
+    {
+        id: 1,
+        name: "khaled",
+        email: "khaled@gmail.com",
+        gender: DB_1.GenderEnum.male,
+        password: "0000",
+        followers: [],
+    },
+    {
+        id: 2,
+        name: "mohamed",
+        email: "mohamed@gmail.com",
+        gender: DB_1.GenderEnum.male,
+        password: "0000",
+        followers: [],
+    },
+    {
+        id: 3,
+        name: "menna",
+        email: "menna@gmail.com",
+        gender: DB_1.GenderEnum.female,
+        password: "0000",
+        followers: [],
+    },
+    {
+        id: 4,
+        name: "mazen",
+        email: "mazen@gmail.com",
+        gender: DB_1.GenderEnum.male,
+        password: "0000",
+        followers: [],
+    },
+];
 class UserService {
     userModel = new DB_1.UserRepository(DB_1.UserModel);
     postModel = new DB_1.PostRepository(DB_1.PostModel);
@@ -442,5 +478,35 @@ class UserService {
             message: "User blocked successfully",
         });
     };
+    welcome = (user) => {
+        return "Hello GraphQl";
+    };
+    allUsers = async (args, authUser) => {
+        return await this.userModel.find({
+            filter: {
+                _id: { $ne: authUser._id },
+                gender: args.gender,
+            },
+        });
+    };
+    search = (args) => {
+        const user = users.find((ele) => ele.email === args.email);
+        if (!user) {
+            throw new graphql_1.GraphQLError("fail to find matching result", {
+                extensions: { statusCode: 404 },
+            });
+        }
+        return { message: "Done", statusCode: 200, data: user };
+    };
+    addFollower = (args) => {
+        users = users.map((ele) => {
+            if (ele.id === args.friendId) {
+                ele.followers.push(args.myId);
+            }
+            return ele;
+        });
+        return users;
+    };
 }
+exports.UserService = UserService;
 exports.default = new UserService();
