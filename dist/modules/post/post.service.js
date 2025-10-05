@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.postService = exports.postAvailability = void 0;
+exports.postService = exports.PostService = exports.postAvailability = void 0;
 const success_response_1 = require("../../utils/response/success.response");
 const error_response_1 = require("../../utils/response/error.response");
 const uuid_1 = require("uuid");
@@ -10,17 +10,18 @@ const email_event_1 = require("../../utils/email/email.event");
 const otp_1 = require("../../utils/otp");
 const DB_1 = require("../../DB");
 const gateway_1 = require("../gateway");
-const postAvailability = (req) => {
+const graphql_1 = require("graphql");
+const postAvailability = (user) => {
     return [
         { availability: DB_1.AvailabilityEnum.public },
-        { availability: DB_1.AvailabilityEnum.onlyMe, createdBy: req.user?._id },
+        { availability: DB_1.AvailabilityEnum.onlyMe, createdBy: user._id },
         {
             availability: DB_1.AvailabilityEnum.friends,
-            createdBy: { $in: [...(req.user?.friends || []), req.user?._id] },
+            createdBy: { $in: [...(user.friends || []), user._id] },
         },
         {
             availability: { $ne: DB_1.AvailabilityEnum.onlyMe },
-            tags: { $in: req.user?._id },
+            tags: { $in: user._id },
         },
     ];
 };
@@ -152,7 +153,7 @@ class PostService {
         const post = await this.postModel.findOneAndUpdate({
             filter: {
                 _id: postId,
-                $or: (0, exports.postAvailability)(req),
+                $or: (0, exports.postAvailability)(req.user),
             },
             update,
         });
@@ -170,7 +171,7 @@ class PostService {
         let { page, size } = req.query;
         const posts = await this.postModel.paginate({
             filter: {
-                $or: (0, exports.postAvailability)(req),
+                $or: (0, exports.postAvailability)(req.user),
             },
             options: {
                 populate: [
@@ -281,5 +282,74 @@ class PostService {
             message: "post deleted successfully",
         });
     };
+    allPosts = async ({ page, size, }, authUser) => {
+        const posts = await this.postModel.paginate({
+            filter: {
+                $or: (0, exports.postAvailability)(authUser),
+            },
+            options: {
+                populate: [
+                    {
+                        path: "comments",
+                        match: {
+                            commentId: { $exists: false },
+                            freezedAt: { $exists: false },
+                        },
+                        populate: [
+                            {
+                                path: "reply",
+                                match: {
+                                    commentId: { $exists: false },
+                                    freezedAt: { $exists: false },
+                                },
+                                populate: [
+                                    {
+                                        path: "reply",
+                                        match: {
+                                            commentId: { $exists: false },
+                                            freezedAt: { $exists: false },
+                                        },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        path: "createdBy",
+                    },
+                ],
+            },
+            page,
+            size,
+        });
+        return posts;
+    };
+    likeGraphPost = async ({ postId, action }, authUser) => {
+        let update = {
+            $addToSet: { likes: authUser._id },
+        };
+        if (action === DB_1.LikeActionEnum.unlike) {
+            update = { $pull: { likes: authUser._id } };
+        }
+        const post = await this.postModel.findOneAndUpdate({
+            filter: {
+                _id: postId,
+                $or: (0, exports.postAvailability)(authUser),
+            },
+            update,
+        });
+        if (!post) {
+            throw new graphql_1.GraphQLError("invalid postId or post not exist", {
+                extensions: { statusCode: 404 },
+            });
+        }
+        if (action !== DB_1.LikeActionEnum.unlike) {
+            (0, gateway_1.getIo)()
+                .to(gateway_1.connectedSockets.get(post.createdBy.toString()))
+                .emit("likePost", { postId, userId: authUser._id });
+        }
+        return post;
+    };
 }
+exports.PostService = PostService;
 exports.postService = new PostService();

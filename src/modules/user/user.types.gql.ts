@@ -7,7 +7,7 @@ import {
   GraphQLObjectType,
   GraphQLString,
 } from "graphql";
-import { GenderEnum, ProviderEnum, RoleEnum } from "../../DB";
+import { GenderEnum, HUserDocument, ProviderEnum, RoleEnum } from "../../DB";
 import { GraphQLUniformResponse } from "../graphql/types.gql";
 
 export const GraphQLGenderEnum = new GraphQLEnumType({
@@ -38,7 +38,14 @@ export const GraphQLOneUserResponse = new GraphQLObjectType({
     _id: { type: GraphQLID },
     firstName: { type: new GraphQLNonNull(GraphQLString) },
     lastName: { type: GraphQLString },
-    username: { type: GraphQLString },
+    username: {
+      type: GraphQLString,
+      resolve: (parent: HUserDocument) => {
+        return parent.gender === GenderEnum.male
+          ? `Mr:${parent.username}`
+          : `Mis:${parent.username}`;
+      },
+    },
 
     email: { type: GraphQLString },
     confirmEmailOtp: { type: GraphQLString },

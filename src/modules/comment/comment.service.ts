@@ -5,6 +5,7 @@ import {
   CommentModel,
   CommentRepository,
   HPostDocument,
+  HUserDocument,
   PostModel,
   PostRepository,
   RoleEnum,
@@ -31,7 +32,7 @@ class CommentService {
       filter: {
         _id: postId,
         allowComments: AllowCommentsEnum.allow,
-        $or: postAvailability(req),
+        $or: postAvailability(req.user as HUserDocument),
       },
     });
     if (!post) {
@@ -90,7 +91,7 @@ class CommentService {
             path: "postId",
             match: {
               allowComments: AllowCommentsEnum.allow,
-              $or: postAvailability(req),
+              $or: postAvailability(req.user as HUserDocument),
             },
           },
         ],

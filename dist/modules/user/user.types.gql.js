@@ -32,7 +32,14 @@ exports.GraphQLOneUserResponse = new graphql_1.GraphQLObjectType({
         _id: { type: graphql_1.GraphQLID },
         firstName: { type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString) },
         lastName: { type: graphql_1.GraphQLString },
-        username: { type: graphql_1.GraphQLString },
+        username: {
+            type: graphql_1.GraphQLString,
+            resolve: (parent) => {
+                return parent.gender === DB_1.GenderEnum.male
+                    ? `Mr:${parent.username}`
+                    : `Mis:${parent.username}`;
+            },
+        },
         email: { type: graphql_1.GraphQLString },
         confirmEmailOtp: { type: graphql_1.GraphQLString },
         confirmAt: { type: graphql_1.GraphQLString },
